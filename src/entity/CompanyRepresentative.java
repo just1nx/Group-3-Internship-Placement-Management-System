@@ -7,8 +7,8 @@ public class CompanyRepresentative extends User {
     private String email;
     private boolean isVerified;
 
-    public CompanyRepresentative(String name, String password, String companyName, String department, String position, String email) {
-        super(userId, name, password);
+    public CompanyRepresentative(String userID, String name, String password, String companyName, String department, String position, String email) {
+        super(userID, name, password);
         this.companyName = companyName;
         this.department = department;
         this.position = position;
