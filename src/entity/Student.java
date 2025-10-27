@@ -5,11 +5,22 @@ public class Student extends User {
     private String major;
     private int numberOfApplications;
 
-    public Student(String id, String password, int yearOfStudy, String major) {
-        super(id, password);
+    public Student(String userID, String name, String passwordHash, int yearOfStudy, String major) {
+        super(userID, name, passwordHash);
         this.yearOfStudy = yearOfStudy;
         this.major = major;
         this.numberOfApplications = 0;
+    }
+
+    public String getUserID() {
+        return super.getUserID();
+    }
+
+    public String getName() {
+        return super.getName();
+    }
+    public int getYearOfStudy() {
+        return yearOfStudy;
     }
 
     public void applyApplications() {
@@ -25,7 +36,7 @@ public class Student extends User {
         //accepts an internship offer, withdraws from the rest
     }
 
-    public void requestWithdrawal() {
+    public void withdrawalRequest() {
         //requests to withdraw an application
     }
 
