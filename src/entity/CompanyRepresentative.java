@@ -1,14 +1,16 @@
 package entity;
 
 public class CompanyRepresentative extends User {
+    private String userID;
     private String companyName;
     private String department;
     private String position;
     private String email;
     private boolean isVerified;
 
-    public CompanyRepresentative(String name, String password, String companyName, String department, String position, String email) {
-        super(userId, name, password);
+    public CompanyRepresentative(String userID, String name, String passwordHash, String companyName, String department, String position, String email) {
+        super(name, passwordHash);
+        this.userID = userID;
         this.companyName = companyName;
         this.department = department;
         this.position = position;
@@ -56,4 +58,7 @@ public class CompanyRepresentative extends User {
         this.isVerified = isVerified;
     }
 
+    public String getUserID() {
+        return userID;
+    }
 }
