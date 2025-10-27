@@ -1,1 +1,4 @@
-// Login Class Here
+package boundary;
+
+public class LoginInterface {
+}
