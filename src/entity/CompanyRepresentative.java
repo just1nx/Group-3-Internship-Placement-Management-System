@@ -55,8 +55,4 @@ public class CompanyRepresentative extends User {
     public void setVerified(boolean isVerified) {
         this.isVerified = isVerified;
     }
-
-    public String getUserID() {
-        return userID;
-    }
 }
