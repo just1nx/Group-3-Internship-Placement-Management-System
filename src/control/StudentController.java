@@ -1,10 +1,10 @@
-package controller;
+package control;
 
 import entity.Student;
-import entiy.Internship;   
+import entity.Internship;
 import entity.Applications;
 import entity.ApplicationStatus; //need to create enum class in entity package
-import entity.InternshipLevel   // need to create enum class in entity package
+import entity.InternshipLevel;   // need to create enum class in entity package
 import entity.WithdrawalRequest; // need to create enum class in entity package 
 import entity.WithdrawalStatus; // need to create enum class in entity package
 import control.ApplicationManager;  //need to create ApplicationManager class in control package

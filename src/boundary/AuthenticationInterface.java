@@ -113,7 +113,7 @@ public class AuthenticationInterface implements CommandLineInterface {
     private void showUserMenu(User user) {
         // Check the *type* of user object
         if (user instanceof Student) {
-            CommandLineInterface studentMenu = new StudentInterface((Student) user);
+            CommandLineInterface studentMenu = new StudentInterface(user);
 
             System.out.println("Student login successful!");
 
