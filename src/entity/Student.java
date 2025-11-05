@@ -40,4 +40,17 @@ public class Student extends User {
         //requests to withdraw an application
     }
 
+    @Override
+    public String toString() {
+        String userID = getUserID();
+        String name = getName();
+        String passwordHash = getPasswordHash();
+        return "Student[id=" + userID
+                + ", name=" + (name == null || name.isEmpty() ? "<n/a>" : name)
+                + ", major=" + (passwordHash == null || passwordHash.isEmpty() ? "<n/a>" : passwordHash)
+                + ", year=" + (yearOfStudy == 0 ? "<n/a>" : yearOfStudy)
+                + ", email=" + (major == null || major.isEmpty() ? "<n/a>" : major)
+                + "]";
+    }
+
 }
