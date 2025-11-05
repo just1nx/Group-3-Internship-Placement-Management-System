@@ -18,7 +18,7 @@ public class AuthenticationController {
     private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
 
     public AuthenticationController() {
-        Path csvPath = Paths.get("/Users/ben/IdeaProjects/Group-3-Internship-Placement-Management-System/data/sample_student_list.csv");
+        Path csvPath = Paths.get("data/sample_student_list.csv");
         loadStudents(csvPath);
     }
 
