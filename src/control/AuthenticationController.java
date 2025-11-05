@@ -16,12 +16,12 @@ import java.util.stream.Stream;
 public class AuthenticationController {
 
     private final Map<String, Student> students = new HashMap<>();
-    private final Map<String, String> passwords = new HashMap<>();
+    private final Map<String, String> studentpasswords = new HashMap<>();
 
-    private final Map<String, User> companyReps = new HashMap<>();
+    private final Map<String, CompanyRepresentative> companyReps = new HashMap<>();
     private final Map<String, String> companyPasswords = new HashMap<>();
 
-    private final Map<String, User> staff = new HashMap<>();
+    private final Map<String, CareerCenterStaff> staff = new HashMap<>();
     private final Map<String, String> staffPasswords = new HashMap<>();
 
     private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
@@ -52,14 +52,15 @@ public class AuthenticationController {
                         if (cols.length > 3) {
                             try {
                                 year = Integer.parseInt(cols[3].trim());
-                            } catch (NumberFormatException ignored) { }
+                            } catch (NumberFormatException ignored) {
+                            }
                         }
                         String email = cols.length > 4 ? cols[4].trim() : "";
                         String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : id;
 
                         Student student = new Student(id, name, pw, year, major);
                         students.put(id, student);
-                        passwords.put(id, pw);
+                        studentpasswords.put(id, pw);
                     });
         } catch (IOException e) {
             System.err.println("Failed to read CSV: " + e.getMessage());
@@ -134,12 +135,30 @@ public class AuthenticationController {
         return Email_PATTERN.matcher(email).matches();
     }
 
+    public boolean isValidCompanyRepEmail(String email) {
+        return companyReps.containsKey(email);
+    }
+
+    public boolean isValidStaffId(String staffId) {
+        return staff.containsKey(staffId);
+    }
+
     public User login(String UserId, String password) {
-        Path csvPath = Paths.get("data/sample_student_list.csv");
-        loadStudents(csvPath);
-        if ((isValidStudentId(UserId) && Objects.equals("password", password))) {
+        Path studentPath = Paths.get("data/sample_student_list.csv");
+        loadStudents(studentPath);
+        Path companyrepPath = Paths.get("data/sample_company_representative_list.csv");
+        loadCompanyReps(companyrepPath);
+        Path staffPath = Paths.get("data/sample_staff_list.csv");
+        loadStaff(staffPath);
+        if ((isValidStudentId(UserId) && Objects.equals(password, studentpasswords.get(UserId)))) {
             Student s = students.get(UserId);
             return s;
+        } else if (isValidCompanyRepEmail(UserId) && Objects.equals(password, companyPasswords.get(UserId))) {
+            CompanyRepresentative cr = companyReps.get(UserId);
+            return cr;
+        } else if (isValidStaffId(UserId) && Objects.equals(password, staffPasswords.get(UserId))) {
+            CareerCenterStaff ccs = staff.get(UserId);
+            return ccs;
         } else {
             return null; // need to add for company rep and career center staff
         }
@@ -187,6 +206,7 @@ public class AuthenticationController {
             System.out.println(s);
         }
     }
+}
 
 //    public static void main(String[] args) {
 //        Path csvPath = Paths.get("/Users/ben/IdeaProjects/Group-3-Internship-Placement-Management-System/data/sample_student_list.csv");
@@ -201,8 +221,11 @@ public class AuthenticationController {
 //        Path studentCsvPath = Paths.get("data/sample_student_list.csv");
 //        authController.register("123@gmail.com", "John Doe", "password123", "TechCorp", "Engineering", "Manager");
 //    }
-
-
-}
+//public static void main(String[] args) {
+//    AuthenticationController authController = new AuthenticationController();
+//    Path studentCsvPath = Paths.get("data/sample_student_list.csv");
+//    authController.login("U2310001A", "password");
+//    authController.login("sng001", "password");
+//}
 
 
