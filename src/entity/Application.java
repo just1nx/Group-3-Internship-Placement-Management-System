@@ -1,12 +1,12 @@
 package entity;
 
-public class Applications {
+public class Application {
     private String applicationId;
     private String status; // "Pending", "Successful", "Unsuccessful"
     private String submittedDate;
     private String userId;
 
-    public Applications(String applicationId, String status, String submittedDate, String userId) {
+    public Application(String applicationId, String status, String submittedDate, String userId) {
         this.applicationId = applicationId;
         this.status = status;
         this.submittedDate = submittedDate;

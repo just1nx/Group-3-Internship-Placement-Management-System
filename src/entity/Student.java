@@ -12,34 +12,36 @@ public class Student extends User {
         this.numberOfApplications = 0;
     }
 
-    public String getUserID() {
-        return super.getUserID();
-    }
-
-    public String getName() {
-        return super.getName();
-    }
     public int getYearOfStudy() {
         return yearOfStudy;
     }
 
-    public void applyApplications() {
+    public String getMajor() {
+        return major;
+    }
+
+    public int getNumberOfApplications() {
+        return numberOfApplications;
+    }
+
+    public void apply() {
         numberOfApplications++;
     }
 
     public void viewApplications() {
-        //Able to view the internship he/she applied for, even after visibility is turned off,
+        // Able to view the internship he/she applied for, even after visibility is turned off,
         // and the application status (“Pending”, Successful”, or “Unsuccessful”)
     }
 
     public void acceptApplication() {
-        //accepts an internship offer, withdraws from the rest
+        // accepts an internship offer, withdraws from the rest
     }
 
     public void withdrawalRequest() {
-        //requests to withdraw an application
+        // requests to withdraw an application
     }
 
+    // Temporary
     @Override
     public String toString() {
         String userID = getUserID();
@@ -52,5 +54,4 @@ public class Student extends User {
                 + ", email=" + (major == null || major.isEmpty() ? "<n/a>" : major)
                 + "]";
     }
-
 }

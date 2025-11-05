@@ -72,6 +72,7 @@ public class Internship {
     public String getClosingDate() {
         return closingDate;
     }
+
     public void setClosingDate(String closingDate) {
         this.closingDate = closingDate;
     }
