@@ -1,6 +1,6 @@
 package boundary;
 
-import control.AuthController;
+import control.AuthenticationController;
 import entity.User;
 import entity.Student;
 import entity.CareerCenterStaff;
@@ -11,7 +11,7 @@ import java.util.Scanner;
 // This class represents the login interface of the application.
 public class AuthenticationInterface implements CommandLineInterface {
     private Scanner scanner = new Scanner(System.in);
-    private AuthController authController = new AuthController();
+    private AuthenticationController authController = new AuthenticationController();
 
     @Override
     public void display() {
