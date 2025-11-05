@@ -5,15 +5,15 @@ public class CompanyRepresentative extends User {
     private String department;
     private String position;
     private String email;
-    private boolean isVerified;
+    private String status;
 
-    public CompanyRepresentative(String userID, String name, String passwordHash, String companyName, String department, String position, String email) {
+    public CompanyRepresentative(String userID, String name, String passwordHash, String companyName, String department, String position, String email, String status) {
         super(userID, name, passwordHash);
         this.companyName = companyName;
         this.department = department;
         this.position = position;
         this.email = email;
-        this.isVerified = false; // Default to not verified
+        this.status = status; // Default to not verified
     }
 
     public String getCompanyName() {
@@ -48,11 +48,11 @@ public class CompanyRepresentative extends User {
         this.email = email;
     }
 
-    public boolean isVerified() {
-        return isVerified;
+    public String getStatus() {
+        return status;
     }
 
-    public void setVerified(boolean isVerified) {
-        this.isVerified = isVerified;
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
