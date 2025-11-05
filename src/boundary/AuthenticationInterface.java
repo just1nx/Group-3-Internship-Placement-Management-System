@@ -90,24 +90,22 @@ public class AuthenticationInterface implements CommandLineInterface {
         System.out.print("Enter Position: ");
         String position = scanner.nextLine();
 
-        // --- Pass to Controller ---
-        // This 'registerCompanyRepresentative' method is in your AuthController
-//        try {
-//            boolean success = authController.register(
-//                    email, name, password, companyName, department, position
-//            );
-//
-//            if (success) {
-//                System.out.println("Registration successful!");
-//                System.out.println("Your account (ID: " + email + ") is pending approval from a Career Center Staff.");
-//                System.out.println("You will be able to log in once approved.");
-//            } else {
-//                System.out.println("Registration failed. An account with this email may already exist.");
-//            }
-//        } catch (Exception e) {
-//            // Catch any other errors, e.g., validation
-//            System.out.println("Registration failed: " + e.getMessage());
-//        }
+        try {
+            boolean success = authController.register(
+                    email, name, password, companyName, department, position
+            );
+
+            if (success) {
+                System.out.println("Registration successful!");
+                System.out.println("Your account (ID: " + email + ") is pending approval from a Career Center Staff.");
+                System.out.println("You will be able to log in once approved.");
+            } else {
+                System.out.println("Registration failed. An account with this email may already exist.");
+            }
+        } catch (Exception e) {
+            // Catch any other errors, e.g., validation
+            System.out.println("Registration failed: " + e.getMessage());
+        }
     }
 
     private void showUserMenu(User user) {
