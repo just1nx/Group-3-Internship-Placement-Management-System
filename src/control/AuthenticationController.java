@@ -140,7 +140,7 @@ public class AuthenticationController {
         if ((isValidStudentId(userID) && Objects.equals(password, students.get(userID).getPasswordHash()))) {
             return students.get(userID);
         } else if (isValidCompanyRepEmail(userID) && Objects.equals(password, companyReps.get(userID).getPasswordHash())) {
-            if (companyReps.get(userID).getStatus() == "Approved") {
+            if (Objects.equals(companyReps.get(userID).getStatus(), "Approved")) {
                 return companyReps.get(userID);
             } else {
                 return null;
