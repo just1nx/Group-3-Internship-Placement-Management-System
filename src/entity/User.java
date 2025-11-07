@@ -4,11 +4,13 @@ public abstract class User {
     private String userID;
     private String name;
     private String passwordHash;
+    private String email;
 
-    public User(String userID, String name, String passwordHash) {
+    public User(String userID, String name, String passwordHash, String email) {
         this.userID = userID;
         this.name = name;
         this.passwordHash = passwordHash;
+        this.email = email;
     }
 
     public String getUserID() {
@@ -25,5 +27,9 @@ public abstract class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getEmail() {
+        return email;
     }
 }

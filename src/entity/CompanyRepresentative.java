@@ -4,15 +4,13 @@ public class CompanyRepresentative extends User {
     private String companyName;
     private String department;
     private String position;
-    private String email;
     private String status;
 
-    public CompanyRepresentative(String userID, String name, String passwordHash, String companyName, String department, String position, String email, String status) {
-        super(userID, name, passwordHash);
+    public CompanyRepresentative(String userID, String name, String passwordHash, String email, String companyName, String department, String position, String status) {
+        super(userID, name, passwordHash, email);
         this.companyName = companyName;
         this.department = department;
         this.position = position;
-        this.email = email;
         this.status = status; // Default to not verified
     }
 
@@ -38,14 +36,6 @@ public class CompanyRepresentative extends User {
 
     public void setPosition(String position) {
         this.position = position;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getStatus() {

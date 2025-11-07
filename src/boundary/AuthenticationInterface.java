@@ -17,12 +17,13 @@ public class AuthenticationInterface implements CommandLineInterface {
     public void display() {
         // This is the main application loop
         while (true) {
-            System.out.println("==========================================");
-            System.out.println("   Internship Placement Management System   ");
-            System.out.println("==========================================");
+            System.out.println("======================================");
+            System.out.println("Internship Placement Management System");
+            System.out.println("======================================");
             System.out.println("1. Login");
             System.out.println("2. Register");
-            System.out.println("3. Exit");
+            System.out.println("3. Change Password");
+            System.out.println("4. Exit");
             System.out.print("Enter your choice: ");
 
             String choice = scanner.nextLine();
@@ -35,6 +36,9 @@ public class AuthenticationInterface implements CommandLineInterface {
                     handleRegister(); // Call the new method
                     break;
                 case "3":
+                    handleChangePassword();
+                    break;
+                case "4":
                     System.out.println("Exiting system. Goodbye!");
                     return; // Exit the display method, which ends the program
                 default:
@@ -108,6 +112,35 @@ public class AuthenticationInterface implements CommandLineInterface {
         }
     }
 
+    private void handleChangePassword() {
+        System.out.print("Enter User ID: ");
+        String userID = scanner.nextLine();
+        System.out.print("Enter Password: ");
+        String password = scanner.nextLine();
+
+        User loggedInUser = authController.login(userID, password);
+
+        if (loggedInUser == null) {
+            System.out.println("Password change failed. Invalid User ID or Password.");
+        } else {
+            System.out.print("Enter New Password: ");
+            String newPassword = scanner.nextLine();
+
+            try {
+                boolean success = authController.changePassword(loggedInUser, newPassword);
+
+                if (success) {
+                    System.out.println("Password change successful! Please login with your new password.");
+                } else {
+                    System.out.println("Password change failed.");
+                }
+            } catch (Exception e) {
+                // Catch any other errors, e.g., validation
+                System.out.println("Password change failed: " + e.getMessage());
+            }
+        }
+    }
+
     private void showUserMenu(User user) {
         // Check the *type* of user object
         if (user instanceof Student) {
@@ -115,14 +148,14 @@ public class AuthenticationInterface implements CommandLineInterface {
 
             System.out.println("Student login successful!");
 
-            // studentMenu.display();
+            studentMenu.display();
 
         } else if (user instanceof CareerCenterStaff) {
-            // CommandLineInterface staffMenu = new CareerCenterStaffInterface((CareerCenterStaff) user);
+            // CommandLineInterface staffMenu = new CareerCenterStaffInterface(user);
 
             // staffMenu.display();
         } else if (user instanceof CompanyRepresentative) {
-            // CommandLineInterface repMenu = new CompanyRepresentativeInterface((CompanyRepresentative) user);
+            // CommandLineInterface repMenu = new CompanyRepresentativeInterface(user);
 
             // repMenu.display();
         }

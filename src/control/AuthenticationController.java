@@ -9,35 +9,31 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Pattern;
+//import java.util.regex.Pattern;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class AuthenticationController {
-
     private final Map<String, Student> students = new HashMap<>();
-    private final Map<String, String> studentpasswords = new HashMap<>();
-
     private final Map<String, CompanyRepresentative> companyReps = new HashMap<>();
-    private final Map<String, String> companyPasswords = new HashMap<>();
-
     private final Map<String, CareerCenterStaff> staff = new HashMap<>();
-    private final Map<String, String> staffPasswords = new HashMap<>();
-
-    private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
+    //private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
 
     public AuthenticationController() {
+        Path studentPath = Paths.get("data/sample_student_list.csv");
+        loadStudents(studentPath);
+        Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
+        loadCompanyReps(companyRepPath);
+        Path staffPath = Paths.get("data/sample_staff_list.csv");
+        loadStaff(staffPath);
     }
 
     private void loadStudents(Path csvPath) {
         if (csvPath == null || !Files.exists(csvPath)) {
-            System.err.println("CSV not found: " + csvPath);
-            return;
-        }
-        if (csvPath == null || !Files.exists(csvPath)) {
             System.err.println("Student CSV not found: " + csvPath);
             return;
         }
+
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1)
                     .map(line -> line.split(",", -1))
@@ -56,14 +52,13 @@ public class AuthenticationController {
                             }
                         }
                         String email = cols.length > 4 ? cols[4].trim() : "";
-                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : id;
+                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : "password";
 
-                        Student student = new Student(id, name, pw, year, major);
+                        Student student = new Student(id, name, pw, email, year, major);
                         students.put(id, student);
-                        studentpasswords.put(id, pw);
                     });
         } catch (IOException e) {
-            System.err.println("Failed to read CSV: " + e.getMessage());
+            System.err.println("Failed to read student CSV: " + e.getMessage());
         }
     }
 
@@ -72,6 +67,7 @@ public class AuthenticationController {
             System.err.println("Staff CSV not found: " + csvPath);
             return;
         }
+
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1)
                     .map(line -> line.split(",", -1))
@@ -84,12 +80,10 @@ public class AuthenticationController {
                         String role = cols.length > 2 ? cols[2].trim() : "";
                         String department = cols.length > 3 ? cols[3].trim() : "";
                         String email = cols.length > 4 ? cols[4].trim() : "";
-                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : id;
+                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : "password";
 
-                        // using User for staff; extend if you have a Staff class
-                        CareerCenterStaff careerstaff = new CareerCenterStaff(id, name, pw, department);
-                        staff.put(id, careerstaff);
-                        staffPasswords.put(id, pw);
+                        CareerCenterStaff careerStaff = new CareerCenterStaff(id, name, pw, email, department, role);
+                        staff.put(id, careerStaff);
                     });
         } catch (IOException e) {
             System.err.println("Failed to read staff CSV: " + e.getMessage());
@@ -98,9 +92,10 @@ public class AuthenticationController {
 
     private void loadCompanyReps(Path csvPath) {
         if (csvPath == null || !Files.exists(csvPath)) {
-            System.err.println("Company reps CSV not found: " + csvPath);
+            System.err.println("Company representatives CSV not found: " + csvPath);
             return;
         }
+
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1)
                     .map(line -> line.split(",", -1))
@@ -115,15 +110,13 @@ public class AuthenticationController {
                         String position = cols.length > 4 ? cols[4].trim() : "";
                         String email = cols.length > 5 ? cols[5].trim() : "";
                         String status = cols.length > 6 ? cols[6].trim() : "";
-                        String pw = cols.length > 7 && !cols[7].trim().isEmpty() ? cols[7].trim() : id;
+                        String pw = cols.length > 7 && !cols[7].trim().isEmpty() ? cols[7].trim() : "password";
 
-                        // using User for company reps; extend if you have a CompanyRep class
-                        CompanyRepresentative companyrep = new CompanyRepresentative(id, name, pw, companyName, department, position, email, "Pending");
-                        companyReps.put(id, companyrep);
-                        companyPasswords.put(id, pw);
+                        CompanyRepresentative companyRep = new CompanyRepresentative(id, name, pw, email, companyName, department, position, status);
+                        companyReps.put(id, companyRep);
                     });
         } catch (IOException e) {
-            System.err.println("Failed to read company reps CSV: " + e.getMessage());
+            System.err.println("Failed to read company representatives CSV: " + e.getMessage());
         }
     }
 
@@ -131,9 +124,9 @@ public class AuthenticationController {
         return students.containsKey(studentId);
     }
 
-    public boolean isValidEmail(String email) {
-        return Email_PATTERN.matcher(email).matches();
-    }
+//    public boolean isValidEmail(String email) {
+//        return Email_PATTERN.matcher(email).matches();
+//    }
 
     public boolean isValidCompanyRepEmail(String email) {
         return companyReps.containsKey(email);
@@ -143,24 +136,19 @@ public class AuthenticationController {
         return staff.containsKey(staffId);
     }
 
-    public User login(String UserId, String password) {
-        Path studentPath = Paths.get("data/sample_student_list.csv");
-        loadStudents(studentPath);
-        Path companyrepPath = Paths.get("data/sample_company_representative_list.csv");
-        loadCompanyReps(companyrepPath);
-        Path staffPath = Paths.get("data/sample_staff_list.csv");
-        loadStaff(staffPath);
-        if ((isValidStudentId(UserId) && Objects.equals(password, studentpasswords.get(UserId)))) {
-            Student s = students.get(UserId);
-            return s;
-        } else if (isValidCompanyRepEmail(UserId) && Objects.equals(password, companyPasswords.get(UserId))) {
-            CompanyRepresentative cr = companyReps.get(UserId);
-            return cr;
-        } else if (isValidStaffId(UserId) && Objects.equals(password, staffPasswords.get(UserId))) {
-            CareerCenterStaff ccs = staff.get(UserId);
-            return ccs;
+    public User login(String userID, String password) {
+        if ((isValidStudentId(userID) && Objects.equals(password, students.get(userID).getPasswordHash()))) {
+            return students.get(userID);
+        } else if (isValidCompanyRepEmail(userID) && Objects.equals(password, companyReps.get(userID).getPasswordHash())) {
+            if (companyReps.get(userID).getStatus() == "Approved") {
+                return companyReps.get(userID);
+            } else {
+                return null;
+            }
+        } else if (isValidStaffId(userID) && Objects.equals(password, staff.get(userID).getPasswordHash())) {
+            return staff.get(userID);
         } else {
-            return null; // need to add for company rep and career center staff
+            return null;
         }
     }
 
@@ -190,10 +178,8 @@ public class AuthenticationController {
         try {
             Files.write(path, Collections.singletonList(line), java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
 
-            // update in-memory maps using User to avoid constructor signature issues
-            CompanyRepresentative companyrep = new CompanyRepresentative(email, name, password, companyName, department, position, email, status);
-            companyReps.put(email, companyrep);
-            companyPasswords.put(email, password);
+            CompanyRepresentative companyRep = new CompanyRepresentative(email, name, password, companyName, department, position, email, status);
+            companyReps.put(email, companyRep);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to write company rep CSV: " + e.getMessage());
@@ -201,31 +187,87 @@ public class AuthenticationController {
         }
     }
 
-    public void printStudentsDetailed() {
-        for (Student s : students.values()) {
-            System.out.println(s);
+    // Change password method. Method should return true for a successful password change and false for a failed password change
+    public boolean changePassword(User loggedInUser, String newPassword) {
+        // 1. Update the password in the in-memory user object
+        // (This also updates the object within the 'students', 'companyReps', or 'staff' map)
+        loggedInUser.setPasswordHash(newPassword);
+
+        try {
+            // 2. Determine user type and call the appropriate write method
+            if (loggedInUser instanceof Student) {
+                Path path = Paths.get("data/sample_student_list.csv");
+                List<String> lines = new ArrayList<>();
+                lines.add("StudentID,Name,Major,Year,Email,Password"); // Add header
+
+                // Re-write all students from the 'students' map
+                for (Student s : students.values()) {
+                    lines.add(String.join(",",
+                            s.getUserID(),
+                            s.getName(),
+                            s.getMajor(),
+                            String.valueOf(s.getYearOfStudy()), // Convert int year to String
+                            s.getEmail(),
+                            s.getPasswordHash() // Use the (potentially new) password
+                    ));
+                }
+                // Overwrite the file with the new lines
+                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                return true;
+
+            } else if (loggedInUser instanceof CompanyRepresentative) {
+                Path path = Paths.get("data/sample_company_representative_list.csv");
+                List<String> lines = new ArrayList<>();
+                lines.add("CompanyRepID,Name,CompanyName,Department,Position,Email,Status,Password"); // Add header
+
+                // Re-write all company reps from the 'companyReps' map
+                for (CompanyRepresentative r : companyReps.values()) {
+                    lines.add(String.join(",",
+                            r.getUserID(),
+                            r.getName(),
+                            r.getCompanyName(),
+                            r.getDepartment(),
+                            r.getPosition(),
+                            r.getEmail(),
+                            r.getStatus(),
+                            r.getPasswordHash() // Use the (potentially new) password
+                    ));
+                }
+                // Overwrite the file with the new lines
+                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                return true;
+
+            } else if (loggedInUser instanceof CareerCenterStaff) {
+                Path path = Paths.get("data/sample_staff_list.csv");
+                List<String> lines = new ArrayList<>();
+                lines.add("StaffID,Name,Role,Department,Email,Password"); // Add header
+
+                // Re-write all staff from the 'staff' map
+                for (CareerCenterStaff s : staff.values()) {
+                    lines.add(String.join(",",
+                            s.getUserID(),
+                            s.getName(),
+                            s.getRole(),
+                            s.getStaffDepartment(),
+                            s.getEmail(),
+                            s.getPasswordHash() // Use the (potentially new) password
+                    ));
+                }
+                // Overwrite the file with the new lines
+                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                return true;
+
+            } else {
+                // 3. Handle unknown user types
+                System.err.println("Password change failed: Unknown user type.");
+                return false;
+            }
+        } catch (IOException e) {
+            // 4. Handle file writing errors
+            System.err.println("Failed to write CSV during password change: " + e.getMessage());
+            return false; // IO error occurred
         }
     }
+
+    // TODO: Password hashing function
 }
-
-//    public static void main(String[] args) {
-//        Path csvPath = Paths.get("/Users/ben/IdeaProjects/Group-3-Internship-Placement-Management-System/data/sample_student_list.csv");
-//        AuthenticationController authController = new AuthenticationController(csvPath);
-//        // print only IDs:
-//        authController.printStudentsDetailed();
-//        // print full student values:
-//
-//    }
-//    public static void main(String[] args) {
-//        AuthenticationController authController = new AuthenticationController();
-//        Path studentCsvPath = Paths.get("data/sample_student_list.csv");
-//        authController.register("123@gmail.com", "John Doe", "password123", "TechCorp", "Engineering", "Manager");
-//    }
-//public static void main(String[] args) {
-//    AuthenticationController authController = new AuthenticationController();
-//    Path studentCsvPath = Paths.get("data/sample_student_list.csv");
-//    authController.login("U2310001A", "password");
-//    authController.login("sng001", "password");
-//}
-
-

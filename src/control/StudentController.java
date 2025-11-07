@@ -1,3 +1,8 @@
+package control;
+
+public class StudentController {
+}
+
 //package control;
 //
 //import entity.Student;
