@@ -98,7 +98,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         // Step 4: Call controller to create the internship
          boolean success = companyRepController.createInternship(
              title, description, level, preferredMajor,
-             openingDate, closingDate, status,
+             openingDate, closingDate,
              companyName, representativeID, slots
          );
 
