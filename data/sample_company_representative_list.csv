@@ -1,6 +1,6 @@
 CompanyRepID,Name,CompanyName,Department,Position,Email,Status,Password
-hr.google@gmail.com,Alice Tan,Google,Human Resources,HR Manager,hr.google@gmail.com,Approved,password
 tech.meta@meta.com,Bob Lee,Meta,Engineering,Software Engineer,tech.meta@meta.com,Approved,password
-recruit.shopee@shopee.sg,Carol Wong,Shopee,Talent Acquisition,Recruiter,recruit.shopee@shopee.sg,Approved,password
-david.chen@bytedance.com,David Chen,ByteDance,Data Science,Data Scientist,david.chen@bytedance.com,Pending,password
+hr.google@gmail.com,Alice Tan,Google,Human Resources,HR Manager,hr.google@gmail.com,Approved,password123
 eva.lim@grab.com,Eva Lim,Grab,Marketing,Marketing Intern,eva.lim@grab.com,Pending,password
+david.chen@bytedance.com,David Chen,ByteDance,Data Science,Data Scientist,david.chen@bytedance.com,Pending,password
+recruit.shopee@shopee.sg,Carol Wong,Shopee,Talent Acquisition,Recruiter,recruit.shopee@shopee.sg,Approved,password
