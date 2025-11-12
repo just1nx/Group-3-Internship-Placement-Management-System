@@ -1,16 +1,16 @@
 package boundary;
 
 import control.StudentController;
-import entity.User;
+import entity.Student;
 
 import java.util.Scanner;
 
 public class StudentInterface implements CommandLineInterface {
     private Scanner scanner = new Scanner(System.in);
     private StudentController studentController = new StudentController();
-    private User student;
+    private Student student;
 
-    public StudentInterface(User student) {
+    public StudentInterface(Student student) {
         this.student = student;
     }
 

@@ -1,6 +1,7 @@
 package entity;
 
 import java.util.UUID;
+import java.time.LocalDate;
 
 public class Internship {
     private UUID id;
@@ -8,8 +9,8 @@ public class Internship {
     private String description;
     private String level; //Basic, Intermediate, Advanced
     private String preferredMajor; //Assume 1 preferred major will do
-    private String openingDate;
-    private String closingDate;
+    private LocalDate openingDate;
+    private LocalDate closingDate;
     private String status; //“Pending”, “Approved”, “Rejected”, “Filled”
     private String companyName;
     private String representatives;
@@ -17,7 +18,7 @@ public class Internship {
     private boolean visibility; //true or false
 
     public Internship(String title, String description, String level, String preferredMajor,
-                      String openingDate, String closingDate, String status,
+                      LocalDate openingDate, LocalDate closingDate, String status,
                       String companyName, String representatives, String numberOfSlots, boolean visibility) {
         this.id = UUID.randomUUID();
         this.title = title;
@@ -31,6 +32,10 @@ public class Internship {
         this.representatives = representatives;
         this.numberOfSlots = numberOfSlots;
         this.visibility = true; //default to true
+    }
+
+    public UUID getUUID() {
+        return id;
     }
 
     public String getTitle() {
@@ -65,19 +70,19 @@ public class Internship {
         this.preferredMajor = preferredMajor;
     }
 
-    public String getOpeningDate() {
+    public LocalDate getOpeningDate() {
         return openingDate;
     }
 
-    public void setOpeningDate(String openingDate) {
+    public void setOpeningDate(LocalDate openingDate) {
         this.openingDate = openingDate;
     }
 
-    public String getClosingDate() {
+    public LocalDate getClosingDate() {
         return closingDate;
     }
 
-    public void setClosingDate(String closingDate) {
+    public void setClosingDate(LocalDate closingDate) {
         this.closingDate = closingDate;
     }
 
