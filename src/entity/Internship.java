@@ -1,6 +1,9 @@
 package entity;
 
+import java.util.UUID;
+
 public class Internship {
+    private UUID id;
     private String title;
     private String description;
     private String level; //Basic, Intermediate, Advanced
@@ -16,6 +19,7 @@ public class Internship {
     public Internship(String title, String description, String level, String preferredMajor,
                       String openingDate, String closingDate, String status,
                       String companyName, String representatives, String numberOfSlots, boolean visibility) {
+        this.id = UUID.randomUUID();
         this.title = title;
         this.description = description;
         this.level = level;

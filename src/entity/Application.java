@@ -1,20 +1,30 @@
 package entity;
 
+import java.util.UUID;
+
 public class Application {
-    private String applicationId;
+    private UUID id;
     private String status; // "Pending", "Successful", "Unsuccessful"
     private String submittedDate;
-    private String userId;
+    private String userID;
+    private String name;
+    private String email;
+    private String major;
+    private int year;
 
-    public Application(String applicationId, String status, String submittedDate, String userId) {
-        this.applicationId = applicationId;
+    public Application(UUID id, String status, String submittedDate, String userID,  String name, String email, String major, int year) {
+        this.id = id;
         this.status = status;
         this.submittedDate = submittedDate;
-        this.userId = userId;
+        this.userID = userID;
+        this.name = name;
+        this.email = email;
+        this.major = major;
+        this.year = year;
     }
 
-    public String getApplicationId() {
-        return applicationId;
+    public UUID getUUID() {
+        return id;
     }
 
     public String getStatus() {
@@ -34,6 +44,22 @@ public class Application {
     }
 
     public String getUserId() {
-        return userId;
+        return userID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getMajor() {
+        return major;
+    }
+
+    public int getYear() {
+        return year;
     }
 }
