@@ -9,9 +9,9 @@ import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 public class CompanyRepresentativeInterface implements CommandLineInterface {
-    private Scanner scanner = new Scanner(System.in);
-    private CompanyRepresentativeController companyRepController = new CompanyRepresentativeController();
-    private CompanyRepresentative companyRep;
+    private final Scanner scanner = new Scanner(System.in);
+    private final CompanyRepresentativeController companyRepController = new CompanyRepresentativeController();
+    private final CompanyRepresentative companyRep;
 
     public CompanyRepresentativeInterface(CompanyRepresentative companyRep) {
         this.companyRep = companyRep;
@@ -22,8 +22,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         boolean running = true;
         while (running) {
             System.out.println("\n==========================================");
-            System.out.println("Company Representative Menu - Welcome, " + companyRep.getName());
-            System.out.println("   " + companyRep.getCompanyName());
+            System.out.println("Company Representative Menu - Welcome, " + companyRep.getName() + ", " + companyRep.getCompanyName());
             System.out.println("==========================================");
             System.out.println("1. Create Internship Opportunity");
             System.out.println("2. View My Internship Opportunities");
@@ -93,13 +92,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         // Step 3: Get automatic details
         String companyName = companyRep.getCompanyName();
         String representativeID = companyRep.getUserID();
-        String status = "Pending"; // Always "Pending" on creation
 
         // Step 4: Call controller to create the internship
          boolean success = companyRepController.createInternship(
              title, description, level, preferredMajor,
-             openingDate, closingDate,
-             companyName, representativeID, slots
+             openingDate, closingDate, companyName, representativeID, Integer.toString(slots)
          );
 
          if (success) {

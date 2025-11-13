@@ -10,8 +10,8 @@ import java.util.Scanner;
 
 // This class represents the login interface of the application.
 public class AuthenticationInterface implements CommandLineInterface {
-    private Scanner scanner = new Scanner(System.in);
-    private AuthenticationController authController = new AuthenticationController();
+    private final Scanner scanner = new Scanner(System.in);
+    private final AuthenticationController authController = new AuthenticationController();
 
     @Override
     public void display() {

@@ -17,10 +17,10 @@ public class Internship {
     private String numberOfSlots; //max 10
     private boolean visibility; //true or false
 
-    public Internship(String title, String description, String level, String preferredMajor,
+    public Internship(UUID id, String title, String description, String level, String preferredMajor,
                       LocalDate openingDate, LocalDate closingDate, String status,
                       String companyName, String representatives, String numberOfSlots, boolean visibility) {
-        this.id = UUID.randomUUID();
+        this.id = id;
         this.title = title;
         this.description = description;
         this.level = level;
