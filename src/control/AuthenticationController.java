@@ -143,11 +143,13 @@ public class AuthenticationController {
             if (Objects.equals(companyReps.get(userID).getStatus(), "Approved")) {
                 return companyReps.get(userID);
             } else {
+                System.err.println("Account not approved by staff yet.");
                 return null;
             }
         } else if (isValidStaffId(userID) && Objects.equals(password, staff.get(userID).getPasswordHash())) {
             return staff.get(userID);
         } else {
+            System.err.println("Invalid credentials.");
             return null;
         }
     }
