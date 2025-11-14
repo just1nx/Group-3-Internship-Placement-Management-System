@@ -56,7 +56,7 @@ public class AuthenticationInterface implements CommandLineInterface {
         User loggedInUser = authController.login(userID, password);
 
         if (loggedInUser == null) {
-            System.out.println("Login failed. Invalid User ID or Password.");
+            System.err.println("Login failed.");
         } else {
             System.out.println("Login successful! Welcome, " + loggedInUser.getName());
             // Now, show the correct menu based on the user's role

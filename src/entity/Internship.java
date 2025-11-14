@@ -31,7 +31,7 @@ public class Internship {
         this.companyName = companyName;
         this.representatives = representatives;
         this.numberOfSlots = numberOfSlots;
-        this.visibility = visibility;
+        this.visibility = visibility; //default to false until approved
     }
 
     public UUID getUUID() {
