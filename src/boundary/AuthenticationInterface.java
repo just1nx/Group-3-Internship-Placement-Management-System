@@ -68,23 +68,18 @@ public class AuthenticationInterface implements CommandLineInterface {
         System.out.println("\n--- Company Representative Registration ---");
         System.out.println("Please enter your details. Your account will require staff approval.");
 
-        // As per PDF, Company Rep ID is their email [cite: 38]
         System.out.print("Enter Email (this will be your User ID): ");
         String email = scanner.nextLine();
 
         System.out.print("Enter Your Name: ");
         String name = scanner.nextLine();
 
-        // As per PDF, default password is "password"[cite: 40],
-        // but for a new registration, it's better to let them set one.
-        // Let's follow the spirit of setting a password.
         System.out.print("Enter Password (default is 'password'): ");
         String password = scanner.nextLine();
         if (password.isEmpty()) {
             password = "password"; // Enforce default if they just press enter
         }
 
-        // As per PDF, we need Company Name, Department, and Position [cite: 44]
         System.out.print("Enter Company Name: ");
         String companyName = scanner.nextLine();
 
@@ -151,9 +146,9 @@ public class AuthenticationInterface implements CommandLineInterface {
             studentMenu.display();
 
         } else if (user instanceof CareerCenterStaff) {
-            // CommandLineInterface staffMenu = new CareerCenterStaffInterface(user);
+            CommandLineInterface staffMenu = new CareerCenterStaffInterface((CareerCenterStaff) user);
 
-            // staffMenu.display();
+            staffMenu.display();
         } else if (user instanceof CompanyRepresentative) {
             CommandLineInterface repMenu = new CompanyRepresentativeInterface((CompanyRepresentative) user);
 
