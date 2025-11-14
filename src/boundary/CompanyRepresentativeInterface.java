@@ -5,7 +5,6 @@ import entity.Application;
 import entity.CompanyRepresentative;
 import entity.Internship;
 
-import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -71,6 +70,164 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         // Loop has ended
         System.out.println("Logging out... Returning to main menu.");
     }
+
+    // Helper methods
+    private String promptForLevel() {
+        while (true) {
+            System.out.print("Enter Internship Level (1: Basic, 2: Intermediate, 3: Advanced, 0: Cancel): ");
+            String levelChoice = scanner.nextLine();
+            switch (levelChoice) {
+                case "1":
+                    return "Basic";
+                case "2":
+                    return "Intermediate";
+                case "3":
+                    return "Advanced";
+                case "0":
+                    System.out.println("Cancelled creation.");
+                    return null;
+                default:
+                    System.out.println("Invalid choice. Please enter 1, 2, 3, or 0.");
+            }
+        }
+    }
+
+    private String promptForDate(String prompt) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        while (true) {
+            System.out.print(prompt + " (or 0 to Cancel): ");
+            String dateInput = scanner.nextLine();
+
+            if (dateInput.equals("0")) {
+                System.out.println("Cancelled creation.");
+                return null;
+            }
+
+            try {
+                // Try parsing the date to ensure it's valid
+                LocalDate.parse(dateInput, dtf);
+                return dateInput; // Return the valid date string
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please use YYYY-MM-DD.");
+            }
+        }
+    }
+
+    private int promptForSlots() {
+        while (true) {
+            System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
+            String slotInput = scanner.nextLine();
+
+            if (slotInput.equals("0")) {
+                System.out.println("Cancelled creation.");
+                return -1;
+            }
+
+            try {
+                int slots = Integer.parseInt(slotInput);
+                if (slots >= 1 && slots <= 10) {
+                    return slots;
+                } else {
+                    System.out.println("Invalid input. Number of slots must be between 1 and 10.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private int promptForNumber() {
+        while (true) {
+            System.out.print("Enter the internship number (or 0 to Cancel): ");
+            String number = scanner.nextLine();
+
+            if (number.equals("0")) {
+                System.out.println("Cancelled Operation.");
+                return -1;
+            }
+
+            try {
+                int number2 = Integer.parseInt(number);
+                if (number2 >= 1 &&  number2 <= companyRepController.viewMyInternships(companyRep.getCompanyName()).size()) {
+                    return number2;
+                } else {
+                    System.out.println("Invalid input. Please enter a valid internship number.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private int promptForStudentNumber(int max) {
+        while (true) {
+            System.out.print("Enter the application number to manage (1-" + max + ", or 0 to Cancel): ");
+            String number = scanner.nextLine();
+
+            if (number.equals("0")) {
+                System.out.println("Cancelled Operation.");
+                return -1;
+            }
+
+            try {
+                int studentNum = Integer.parseInt(number);
+                if (studentNum >= 1 && studentNum <= max) {
+                    return studentNum;
+                } else {
+                    System.out.println("Invalid input. Please enter a valid number (1-" + max + ").");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private String promptForNewApplicationStatus() {
+        while (true) {
+            System.out.println("\nSet New Status:");
+            System.out.println("1. Approved");
+            System.out.println("2. Rejected");
+            System.out.println("0. Cancel");
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    return "Approved";
+                case "2":
+                    return "Rejected";
+                case "0":
+                    System.out.println("Cancelled status change.");
+                    return null;
+                default:
+                    System.out.println("Invalid choice. Please enter 1, 2, or 0.");
+            }
+        }
+    }
+
+    private int promptForOption() {
+        while (true) {
+            System.out.print("Enter visibility preference (1: On, 2: Off, 0: Cancel): ");
+            String option = scanner.nextLine();
+
+            if (option.equals("0")) {
+                System.out.println("Cancelled Operation.");
+                return -1;
+            }
+
+            try {
+                int option2 = Integer.parseInt(option);
+                if (option2 == 1 || option2 == 2) {
+                    return option2;
+                } else {
+                    System.out.println("Invalid input. Please enter 1 or 2.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
 
     private void handleCreateInternship() {
         System.out.println("\n--- Create New Internship Opportunity ---");
@@ -163,6 +320,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         if (description.equals("0")) { System.out.println("Cancelled."); return; }
         if (description.isEmpty()) description = null;
 
+        // TODO: Use promptForLevel() to reduce code length
         // Level: allow 1/2/3 or blank
         String level = null;
         while (true) {
@@ -186,6 +344,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         if (preferredMajor.equals("0")) { System.out.println("Cancelled."); return; }
         if (preferredMajor.isEmpty()) preferredMajor = null;
 
+        // TODO: Use promptForDate() to reduce code length
         // Dates: blank keep, 0 cancel, otherwise validate YYYY-MM-DD
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String openingDate = null;
@@ -203,6 +362,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             }
         }
 
+        // TODO: Use promptForDate() to reduce code length
         String closingDate = null;
         while (true) {
             System.out.print("Closing Date (YYYY-MM-DD) (current: " + (selected.getClosingDate() == null ? "" : selected.getClosingDate()) + "): ");
@@ -218,6 +378,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             }
         }
 
+        // TODO: Use promptForSlots() to reduce code length
         String slots = null;
         while (true) {
             System.out.print("Number of Slots (1-10) (current: " + selected.getNumberOfSlots() + "): ");
@@ -253,7 +414,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    public void handleDeleteInternship() {
+    private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
 
         handleViewMyInternships();
@@ -270,73 +431,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    private String promptForLevel() {
-        while (true) {
-            System.out.print("Enter Internship Level (1: Basic, 2: Intermediate, 3: Advanced, 0: Cancel): ");
-            String levelChoice = scanner.nextLine();
-            switch (levelChoice) {
-                case "1":
-                    return "Basic";
-                case "2":
-                    return "Intermediate";
-                case "3":
-                    return "Advanced";
-                case "0":
-                    System.out.println("Cancelled creation.");
-                    return null;
-                default:
-                    System.out.println("Invalid choice. Please enter 1, 2, 3, or 0.");
-            }
-        }
-    }
-
-    private String promptForDate(String prompt) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        while (true) {
-            System.out.print(prompt + " (or 0 to Cancel): ");
-            String dateInput = scanner.nextLine();
-
-            if (dateInput.equals("0")) {
-                System.out.println("Cancelled creation.");
-                return null;
-            }
-
-            try {
-                // Try parsing the date to ensure it's valid
-                LocalDate.parse(dateInput, dtf);
-                return dateInput; // Return the valid date string
-            } catch (DateTimeParseException e) {
-                System.out.println("Invalid date format. Please use YYYY-MM-DD.");
-            }
-        }
-    }
-
-
-    private int promptForSlots() {
-        while (true) {
-            System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
-            String slotInput = scanner.nextLine();
-
-            if (slotInput.equals("0")) {
-                System.out.println("Cancelled creation.");
-                return -1;
-            }
-
-            try {
-                int slots = Integer.parseInt(slotInput);
-                if (slots >= 1 && slots <= 10) {
-                    return slots;
-                } else {
-                    System.out.println("Invalid input. Number of slots must be between 1 and 10.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        }
-    }
-
     private void handleViewMyInternships() {
-
         List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
 
         if (myInternships.isEmpty()) {
@@ -347,10 +442,6 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         // 2. Iterate and print the details
         int index = 1;
         for (Internship internship : myInternships) {
-
-            // Helper to display visibility status nicely
-
-
             // Custom output formatting
             System.out.println("\n--- Internship #" + index++ + " ---");
             System.out.println("UUID: " + internship.getUUID());
@@ -363,7 +454,6 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             System.out.println("Status: " + internship.getStatus());
             String visibilityDisplay = internship.isVisible() ? "ON" : "OFF";
             System.out.println("Visibility: " + visibilityDisplay);
-
 
         System.out.println("\n==============================================");
         }
@@ -419,6 +509,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
         System.out.println("\n==========================================");
     }
+
     private void handleManageApplications() {
         System.out.println("\n--- Manage Applications by Internship ---");
 
@@ -495,52 +586,6 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    private int promptForStudentNumber(int max) {
-        while (true) {
-            System.out.print("Enter the application number to manage (1-" + max + ", or 0 to Cancel): ");
-            String number = scanner.nextLine();
-
-            if (number.equals("0")) {
-                System.out.println("Cancelled Operation.");
-                return -1;
-            }
-
-            try {
-                int studentNum = Integer.parseInt(number);
-                if (studentNum >= 1 && studentNum <= max) {
-                    return studentNum;
-                } else {
-                    System.out.println("Invalid input. Please enter a valid number (1-" + max + ").");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        }
-    }
-
-    private String promptForNewApplicationStatus() {
-        while (true) {
-            System.out.println("\nSet New Status:");
-            System.out.println("1. Approved");
-            System.out.println("2. Rejected");
-            System.out.println("0. Cancel");
-            System.out.print("Enter your choice: ");
-            String choice = scanner.nextLine();
-
-            switch (choice) {
-                case "1":
-                    return "Approved";
-                case "2":
-                    return "Rejected";
-                case "0":
-                    System.out.println("Cancelled status change.");
-                    return null;
-                default:
-                    System.out.println("Invalid choice. Please enter 1, 2, or 0.");
-            }
-        }
-    }
-
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
 
@@ -585,54 +630,6 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             System.out.println("Internship visibility updated successfully.");
         } else {
             System.err.println("Please try again.");
-        }
-    }
-
-    private int promptForNumber() {
-        // prompt for a valid integer, the number cannot be more than the number of internships
-        while (true) {
-            System.out.print("Enter the internship number (or 0 to Cancel): ");
-            String number = scanner.nextLine();
-
-            if (number.equals("0")) {
-                System.out.println("Cancelled Operation.");
-                return -1;
-            }
-
-            try {
-                int number2 = Integer.parseInt(number);
-                if (number2 >= 1 &&  number2 <= companyRepController.viewMyInternships(companyRep.getCompanyName()).size()) {
-                     return number2;
-                } else {
-                    System.out.println("Invalid input. Please enter a valid internship number.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        }
-    }
-
-    private int promptForOption() {
-        // prompt for a valid integer, the number cannot be more than the number of internships
-        while (true) {
-            System.out.print("Enter visibility preference (1: On, 2: Off, 0: Cancel): ");
-            String option = scanner.nextLine();
-
-            if (option.equals("0")) {
-                System.out.println("Cancelled Operation.");
-                return -1;
-            }
-
-            try {
-                int option2 = Integer.parseInt(option);
-                if (option2 == 1 || option2 == 2) {
-                     return option2;
-                } else {
-                    System.out.println("Invalid input. Please enter 1 or 2.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-            }
         }
     }
 }
