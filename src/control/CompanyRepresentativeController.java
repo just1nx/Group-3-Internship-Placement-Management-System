@@ -61,12 +61,7 @@ public class CompanyRepresentativeController {
                         String companyName = cols.length > 8 ? cols[8].trim() : "";
                         String representatives = cols.length > 9 ? cols[9].trim() : "";
                         String numberOfSlots = cols.length > 10 ? cols[10].trim() : "";
-
-                        Boolean visibility = false;
-                        if (cols.length > 11) {
-                            try { visibility = Boolean.parseBoolean(cols[11].trim()); } catch (Exception ignored) {}
-                        }
-
+                        boolean visibility = Boolean.parseBoolean(cols[11].trim());
                         Internship internship = new Internship(UUID.fromString(id), title, description, level,
                                 preferredMajor, openingDate, closingDate, status, companyName,
                                 representatives, numberOfSlots, visibility);

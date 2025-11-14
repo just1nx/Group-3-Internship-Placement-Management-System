@@ -72,10 +72,16 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     }
 
     // Helper methods
-    private String promptForLevel() {
+    private String promptForLevel(String current) {
         while (true) {
-            System.out.print("Enter Internship Level (1: Basic, 2: Intermediate, 3: Advanced, 0: Cancel): ");
+            if (current == null) {
+                System.out.print("Enter Internship Level (1: Basic, 2: Intermediate, 3: Advanced, 0: Cancel): ");
+            } else {
+                System.out.print("Level (1: Basic, 2: Intermediate, 3: Advanced) (current: " + current + " ): ");
+            }
             String levelChoice = scanner.nextLine();
+            if (levelChoice.isEmpty() && current != null)
+                return current;
             switch (levelChoice) {
                 case "1":
                     return "Basic";
@@ -92,11 +98,18 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    private String promptForDate(String prompt) {
+    private String promptForDate(String prompt, String current) {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         while (true) {
-            System.out.print(prompt + " (or 0 to Cancel): ");
+            if (current == null) {
+                System.out.print(prompt + "or 0 to cancel: ");
+            } else {
+                System.out.print(prompt);
+            }
             String dateInput = scanner.nextLine();
+            if (dateInput.isEmpty() && current != null) {
+                return current;
+            }
 
             if (dateInput.equals("0")) {
                 System.out.println("Cancelled creation.");
@@ -113,10 +126,19 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    private int promptForSlots() {
+    private int promptForSlots(String current) {
         while (true) {
+            if (current == null) {
+                System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
+            } else {
+                System.out.print("Number of Slots (1-10) (current: " + current + " ): ");
+            }
             System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
             String slotInput = scanner.nextLine();
+
+            if (slotInput.isEmpty() && current != null) {
+                return Integer.parseInt(current);
+            }
 
             if (slotInput.equals("0")) {
                 System.out.println("Cancelled creation.");
@@ -246,19 +268,19 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.print("Enter Internship Description: ");
         String description = scanner.nextLine();
 
-        String level = promptForLevel(); // Helper method for validation
+        String level = promptForLevel(null); // Helper method for validation
         if (level == null) return; // User cancelled
 
         System.out.print("Enter Preferred Major (e.g., Computer Science): ");
         String preferredMajor = scanner.nextLine();
 
-        String openingDate = promptForDate("Enter Application Opening Date (YYYY-MM-DD): ");
+        String openingDate = promptForDate("Enter Application Opening Date (YYYY-MM-DD) ", null);
         if (openingDate == null) return; // User cancelled
 
-        String closingDate = promptForDate("Enter Application Closing Date (YYYY-MM-DD): ");
+        String closingDate = promptForDate("Enter Application Closing Date (YYYY-MM-DD) ", null);
         if (closingDate == null) return; // User cancelled
 
-        int slots = promptForSlots(); // Helper method for validation
+        int slots = promptForSlots(null); // Helper method for validation
         if (slots == -1) return; // User cancelled
 
         // Step 3: Get automatic details
@@ -308,91 +330,33 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             return;
         }
 
-        System.out.println("Enter new values or leave blank to keep current. Enter `0` to cancel.");
+        System.out.println("\nEnter new values or leave blank to keep current. Enter `0` to cancel.\n");
 
         System.out.print("Title (current: " + (selected.getTitle() == null ? "" : selected.getTitle()) + "): ");
         String title = scanner.nextLine();
         if (title.equals("0")) { System.out.println("Cancelled."); return; }
-        if (title.isEmpty()) title = null;
 
         System.out.print("Description (current: " + (selected.getDescription() == null ? "" : selected.getDescription()) + "): ");
         String description = scanner.nextLine();
         if (description.equals("0")) { System.out.println("Cancelled."); return; }
         if (description.isEmpty()) description = null;
 
-        // TODO: Use promptForLevel() to reduce code length
-        // Level: allow 1/2/3 or blank
-        String level = null;
-        while (true) {
-            System.out.print("Level (1: Basic, 2: Intermediate, 3: Advanced) (current: " + (selected.getLevel() == null ? "" : selected.getLevel()) + ", leave blank to keep): ");
-            String lvl = scanner.nextLine();
-            if (lvl.equals("0")) { System.out.println("Cancelled."); return; }
-            if (lvl.isEmpty()) { level = null; break; }
-            switch (lvl) {
-                case "1": level = "Basic"; break;
-                case "2": level = "Intermediate"; break;
-                case "3": level = "Advanced"; break;
-                default:
-                    System.out.println("Invalid choice. Enter 1, 2, 3, blank to keep, or 0 to cancel.");
-                    continue;
-            }
-            break;
-        }
+        String level = promptForLevel(selected.getLevel());
+        if (level == null) return;
 
         System.out.print("Preferred Major (current: " + (selected.getPreferredMajor() == null ? "" : selected.getPreferredMajor()) + "): ");
         String preferredMajor = scanner.nextLine();
         if (preferredMajor.equals("0")) { System.out.println("Cancelled."); return; }
         if (preferredMajor.isEmpty()) preferredMajor = null;
 
-        // TODO: Use promptForDate() to reduce code length
-        // Dates: blank keep, 0 cancel, otherwise validate YYYY-MM-DD
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String openingDate = null;
-        while (true) {
-            System.out.print("Opening Date (YYYY-MM-DD) (current: " + (selected.getOpeningDate() == null ? "" : selected.getOpeningDate()) + "): ");
-            String od = scanner.nextLine();
-            if (od.equals("0")) { System.out.println("Cancelled."); return; }
-            if (od.isEmpty()) { openingDate = null; break; }
-            try {
-                LocalDate.parse(od, dtf);
-                openingDate = od;
-                break;
-            } catch (Exception e) {
-                System.out.println("Invalid date format. Use YYYY-MM-DD, leave blank to keep, or 0 to cancel.");
-            }
-        }
+        String openingDate = promptForDate("Opening Date (YYYY-MM-DD) (current: " + selected.getOpeningDate() +"): ", selected.getOpeningDate().toString());
+        if (openingDate == null) { System.out.println("Cancelled."); return; }
 
-        // TODO: Use promptForDate() to reduce code length
-        String closingDate = null;
-        while (true) {
-            System.out.print("Closing Date (YYYY-MM-DD) (current: " + (selected.getClosingDate() == null ? "" : selected.getClosingDate()) + "): ");
-            String cd = scanner.nextLine();
-            if (cd.equals("0")) { System.out.println("Cancelled."); return; }
-            if (cd.isEmpty()) { closingDate = null; break; }
-            try {
-                LocalDate.parse(cd, dtf);
-                closingDate = cd;
-                break;
-            } catch (Exception e) {
-                System.out.println("Invalid date format. Use YYYY-MM-DD, leave blank to keep, or 0 to cancel.");
-            }
-        }
+        String closingDate = promptForDate("Closing Date (YYYY-MM-DD) (current: " + selected.getClosingDate() +"): ", selected.getClosingDate().toString());
+        if (closingDate == null) { System.out.println("Cancelled."); return; }
 
-        // TODO: Use promptForSlots() to reduce code length
-        String slots = null;
-        while (true) {
-            System.out.print("Number of Slots (1-10) (current: " + selected.getNumberOfSlots() + "): ");
-            String s = scanner.nextLine();
-            if (s.equals("0")) { System.out.println("Cancelled."); return; }
-            if (s.isEmpty()) { slots = null; break; }
-            try {
-                int val = Integer.parseInt(s);
-                if (val >= 1 && val <= 10) { slots = Integer.toString(val); break; }
-                else System.out.println("Invalid input. Must be 1-10, blank to keep, or 0 to cancel.");
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Enter a number, blank to keep, or 0 to cancel.");
-            }
-        }
+        String slots = String.valueOf(promptForSlots(selected.getNumberOfSlots()));
+        if (slots.equals("-1")) { System.out.println("Cancelled."); return; }
 
         boolean success = companyRepController.editInternship(
                 companyRep.getCompanyName(),
