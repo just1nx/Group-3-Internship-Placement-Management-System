@@ -6,9 +6,9 @@ import entity.Student;
 import java.util.Scanner;
 
 public class StudentInterface implements CommandLineInterface {
-    private Scanner scanner = new Scanner(System.in);
-    private StudentController studentController = new StudentController();
-    private Student student;
+    private final Scanner scanner = new Scanner(System.in);
+    private final StudentController studentController = new StudentController();
+    private final Student student;
 
     public StudentInterface(Student student) {
         this.student = student;
@@ -47,15 +47,17 @@ public class StudentInterface implements CommandLineInterface {
     }
 
     private void handleViewInternships() {
-        System.out.println("\n--- View Available Internships ---");
-        // 1. Call studentController.getAvailableInternships()
-        //    (This method in the controller will handle filtering by year, major, and visibility)
-        // 2. Display the list of internships
-        // 3. Prompt user to "Apply" or "Go Back"
-        // 4. If Apply:
-        //    - Check student.getNumberOfApplications() < 3
-        //    - Call studentController.applyForInternship(internshipId)
-        System.out.println("... (To be implemented: Show filtered internship list) ...");
+        // System.out.println("\n--- View Available Internships ---");
+        // // 1. Call studentController.getAvailableInternships()
+        // //    (This method in the controller will handle filtering by year, major, and visibility)
+        // // 2. Display the list of internships
+        // // 3. Prompt user to "Apply" or "Go Back"
+        // // 4. If Apply:
+        // //    - Check student.getNumberOfApplications() < 3
+        // //    - Call studentController.applyForInternship(internshipId)
+        // System.out.println("... (To be implemented: Show filtered internship list) ...");
+
+        studentController.applyForInternship(this.student);
     }
 
     /**

@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-//import java.util.regex.Pattern;
+import java.util.regex.Pattern;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -17,14 +17,16 @@ public class AuthenticationController {
     private final Map<String, Student> students = new HashMap<>();
     private final Map<String, CompanyRepresentative> companyReps = new HashMap<>();
     private final Map<String, CareerCenterStaff> staff = new HashMap<>();
-    //private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
+
+    private static final Path studentPath = Paths.get("data/sample_student_list.csv");
+    private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
+    private static final Path staffPath = Paths.get("data/sample_staff_list.csv");
+
+    private static final Pattern Email_PATTERN = Pattern.compile("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+$");
 
     public AuthenticationController() {
-        Path studentPath = Paths.get("data/sample_student_list.csv");
         loadStudents(studentPath);
-        Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
         loadCompanyReps(companyRepPath);
-        Path staffPath = Paths.get("data/sample_staff_list.csv");
         loadStaff(staffPath);
     }
 
@@ -120,13 +122,13 @@ public class AuthenticationController {
         }
     }
 
+    public boolean isValidEmail(String email) {
+        return Email_PATTERN.matcher(email).matches();
+    }
+
     public boolean isValidStudentId(String studentId) {
         return students.containsKey(studentId);
     }
-
-//    public boolean isValidEmail(String email) {
-//        return Email_PATTERN.matcher(email).matches();
-//    }
 
     public boolean isValidCompanyRepEmail(String email) {
         return companyReps.containsKey(email);
@@ -157,28 +159,19 @@ public class AuthenticationController {
     public Boolean register(String email, String name, String password, String companyName, String department, String position) {
         String status = "Pending";
 
-        java.util.function.Function<String, String> esc = s -> {
-            if (s == null) s = "";
-            String out = s.replace("\"", "\"\"");
-            if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-                out = "\"" + out + "\"";
-            }
-            return out;
-        };
         String line = String.join(",",
-                esc.apply(email),
-                esc.apply(name),
-                esc.apply(companyName),
-                esc.apply(department),
-                esc.apply(position),
-                esc.apply(email),
-                esc.apply(status),
-                esc.apply(password)
+                escapeCSV(email),
+                escapeCSV(name),
+                escapeCSV(companyName),
+                escapeCSV(department),
+                escapeCSV(position),
+                escapeCSV(email),
+                escapeCSV(status),
+                escapeCSV(password)
         );
 
-        Path path = Paths.get("data/sample_company_representative_list.csv");
         try {
-            Files.write(path, Collections.singletonList(line), java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+            Files.write(companyRepPath, Collections.singletonList(line), java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
 
             CompanyRepresentative companyRep = new CompanyRepresentative(email, name, password, companyName, department, position, email, status);
             companyReps.put(email, companyRep);
@@ -198,65 +191,62 @@ public class AuthenticationController {
         try {
             // 2. Determine user type and call the appropriate write method
             if (loggedInUser instanceof Student) {
-                Path path = Paths.get("data/sample_student_list.csv");
                 List<String> lines = new ArrayList<>();
                 lines.add("StudentID,Name,Major,Year,Email,Password"); // Add header
 
                 // Re-write all students from the 'students' map
                 for (Student s : students.values()) {
                     lines.add(String.join(",",
-                            s.getUserID(),
-                            s.getName(),
-                            s.getMajor(),
-                            String.valueOf(s.getYearOfStudy()), // Convert int year to String
-                            s.getEmail(),
-                            s.getPasswordHash() // Use the (potentially new) password
+                            escapeCSV(s.getUserID()),
+                            escapeCSV(s.getName()),
+                            escapeCSV(s.getMajor()),
+                            escapeCSV(String.valueOf(s.getYearOfStudy())), // Convert int year to String
+                            escapeCSV(s.getEmail()),
+                            escapeCSV(s.getPasswordHash()) // Use the (potentially new) password
                     ));
                 }
                 // Overwrite the file with the new lines
-                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                Files.write(studentPath, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
                 return true;
 
             } else if (loggedInUser instanceof CompanyRepresentative) {
-                Path path = Paths.get("data/sample_company_representative_list.csv");
                 List<String> lines = new ArrayList<>();
                 lines.add("CompanyRepID,Name,CompanyName,Department,Position,Email,Status,Password"); // Add header
 
                 // Re-write all company reps from the 'companyReps' map
                 for (CompanyRepresentative r : companyReps.values()) {
                     lines.add(String.join(",",
-                            r.getUserID(),
-                            r.getName(),
-                            r.getCompanyName(),
-                            r.getDepartment(),
-                            r.getPosition(),
-                            r.getEmail(),
-                            r.getStatus(),
-                            r.getPasswordHash() // Use the (potentially new) password
+                            escapeCSV(r.getUserID()),
+                            escapeCSV(r.getName()),
+                            escapeCSV(r.getCompanyName()),
+                            escapeCSV(r.getDepartment()),
+                            escapeCSV(r.getPosition()),
+                            escapeCSV(r.getEmail()),
+                            escapeCSV(r.getStatus()),
+                            escapeCSV(r.getPasswordHash()) // Use the (potentially new) password
                     ));
                 }
                 // Overwrite the file with the new lines
-                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                Files.write(companyRepPath, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
                 return true;
 
             } else if (loggedInUser instanceof CareerCenterStaff) {
-                Path path = Paths.get("data/sample_staff_list.csv");
                 List<String> lines = new ArrayList<>();
                 lines.add("StaffID,Name,Role,Department,Email,Password"); // Add header
 
                 // Re-write all staff from the 'staff' map
                 for (CareerCenterStaff s : staff.values()) {
                     lines.add(String.join(",",
-                            s.getUserID(),
-                            s.getName(),
-                            s.getRole(),
-                            s.getStaffDepartment(),
-                            s.getEmail(),
-                            s.getPasswordHash() // Use the (potentially new) password
+                            escapeCSV(s.getUserID()),
+                            escapeCSV(s.getName()),
+                            escapeCSV(s.getRole()),
+                            escapeCSV(s.getStaffDepartment()),
+                            escapeCSV(s.getEmail()),
+                            escapeCSV(s.getPasswordHash()) // Use the (potentially new) password
                     ));
                 }
                 // Overwrite the file with the new lines
-                Files.write(path, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                Files.write(staffPath, lines, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
                 return true;
 
             } else {
@@ -269,6 +259,15 @@ public class AuthenticationController {
             System.err.println("Failed to write CSV during password change: " + e.getMessage());
             return false; // IO error occurred
         }
+    }
+
+    private String escapeCSV(String s) {
+        if (s == null) s = "";
+        String out = s.replace("\"", "\"\""); // Escape existing quotes
+        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
+            out = "\"" + out + "\""; // Wrap in quotes
+        }
+        return out;
     }
 
     // TODO: Password hashing function

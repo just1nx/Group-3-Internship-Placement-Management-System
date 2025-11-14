@@ -24,18 +24,18 @@ public class CareerCenterStaffController {
 
 
     public CareerCenterStaffController() {
-        loadCompanyReps();
-        loadInternships();
+        loadCompanyReps(companyRepPath);
+        loadInternships(internshipPath);
     }
 
     // --- Private Helper Methods to Load Data ---
-    private void loadCompanyReps() {
-        if (!Files.exists(companyRepPath)) {
-            System.err.println("Company representatives CSV not found: " + companyRepPath);
+    private void loadCompanyReps(Path csvPath) {
+        if (!Files.exists(csvPath)) {
+            System.err.println("Company representatives CSV not found: " + csvPath);
             return;
         }
 
-        try (Stream<String> lines = Files.lines(companyRepPath)) {
+        try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1) // Skip header
                     .map(line -> line.split(",", -1))
                     .filter(cols -> cols.length > 0 && !cols[0].trim().isEmpty())
@@ -57,13 +57,13 @@ public class CareerCenterStaffController {
         }
     }
 
-    private void loadInternships() {
+    private void loadInternships(Path csvPath) {
         if (!Files.exists(internshipPath)) {
-            System.err.println("Internship CSV not found: " + internshipPath);
+            System.err.println("Internship CSV not found: " + csvPath);
             return;
         }
 
-        try (Stream<String> lines = Files.lines(internshipPath)) {
+        try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1) // Skip header
                     .map(line -> line.split(",", -1))
                     .filter(cols -> cols.length > 0 && !cols[0].trim().isEmpty())
