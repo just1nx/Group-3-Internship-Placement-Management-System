@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class StudentController {
+public class StudentController extends BaseController {
     private final Map<String, Internship> internships = new HashMap<>();
     private final Map<String, Application> applications = new HashMap<>();
     private final Map<String, Application> withdrawals = new HashMap<>();

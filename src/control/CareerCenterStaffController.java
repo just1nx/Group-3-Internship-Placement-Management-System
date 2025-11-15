@@ -2,6 +2,7 @@ package control;
 
 import entity.CompanyRepresentative;
 import entity.Internship;
+import entity.Withdrawal;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,22 +10,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CareerCenterStaffController {
+public class CareerCenterStaffController extends BaseController {
     private final List<CompanyRepresentative> companyReps =  new ArrayList<>();
     private final List<Internship> internships = new ArrayList<>();
+    private final List<Withdrawal> withdrawals = new ArrayList<>();
     // Define the paths to the data files
     private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
+    private static final Path withdrawalPath  = Paths.get("data/sample_withdrawal_list.csv");
 
     public CareerCenterStaffController() {
         loadCompanyReps(companyRepPath);
         loadInternships(internshipPath);
+        loadWithdrawals(withdrawalPath);
     }
 
     // --- Private Helper Methods to Load Data ---
@@ -86,6 +88,37 @@ public class CareerCenterStaffController {
                     });
         } catch (IOException e) {
             System.err.println("Failed to read internship CSV: " + e.getMessage());
+        }
+    }
+
+    private void loadWithdrawals(Path csvPath) {
+        if (!Files.exists(csvPath)) {
+            System.err.println("Withdrawal CSV not found: " + csvPath);
+            return;
+        }
+
+        try (Stream<String> lines = Files.lines(csvPath)) {
+            lines.skip(1) // skip header
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 8) // Must have 8 columns
+                    .forEach(cols -> {
+                        // This is the Internship's UUID
+                        String internshipId = unquote(cols[0]);
+                        UUID withUuid = UUID.fromString(internshipId);
+
+                        String userId = unquote(cols[1]);
+                        String name = unquote(cols[2]);
+                        String email = unquote(cols[3]);
+                        String major = unquote(cols[4]);
+                        int year = Integer.parseInt(unquote(cols[5]));
+                        String submittedDate = unquote(cols[6]);
+                        String status = unquote(cols[7]);
+
+                        Withdrawal withdrawal = new Withdrawal(withUuid, status, submittedDate, userId, name, email, major, year);
+                        withdrawals.add(withdrawal);
+                    });
+        } catch (IOException e) {
+            System.err.println("Failed to read withdrawal CSV: " + e.getMessage());
         }
     }
 
@@ -151,24 +184,33 @@ public class CareerCenterStaffController {
         }
     }
 
-    // Helper method to escape special characters for CSV format
-    private String escapeCSV(String s) {
-        if (s == null) s = "";
-        String out = s.replace("\"", "\"\"");
-        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\"";
-        }
-        return out;
-    }
+    private boolean rewriteWithdrawalCSV() {
+        List<String> lines = new ArrayList<>();
+        // Add header
+        lines.add("UUID,UserId,Name,Email,Major,Year,SubmittedDate,Status");
 
-    // Helper method to unquote fields
-    private String unquote(String s) {
-        if (s == null) return "";
-        s = s.trim();
-        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
-            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        // Add data lines from in-memory map
+        for (Withdrawal withdrawal : withdrawals) {
+            lines.add(String.join(",",
+                    escapeCSV(withdrawal.getUUID().toString()), // 0: UUID (which is the InternshipUUID)
+                    escapeCSV(withdrawal.getUserId()),          // 1: UserId
+                    escapeCSV(withdrawal.getName()),            // 2: Name
+                    escapeCSV(withdrawal.getEmail()),           // 3: Email
+                    escapeCSV(withdrawal.getMajor()),           // 4: Major
+                    escapeCSV(String.valueOf(withdrawal.getYear())), // 5: Year
+                    escapeCSV(withdrawal.getSubmittedDate()),     // 6: SubmittedDate
+                    escapeCSV(withdrawal.getStatus())             // 7: Status
+            ));
         }
-        return s;
+
+        // Write to file, overwriting existing content
+        try {
+            Files.write(withdrawalPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            return true;
+        } catch (IOException e) {
+            System.err.println("Failed to rewrite withdrawal CSV: " + e.getMessage());
+            return false;
+        }
     }
 
 
@@ -179,33 +221,17 @@ public class CareerCenterStaffController {
                 .collect(Collectors.toList());
     }
 
-    public boolean approveRegistration(String repId) {
-        CompanyRepresentative repToUpdate = null;
-        for (CompanyRepresentative rep : companyReps) {
-            if (rep.getUserID().equalsIgnoreCase(repId)) {
-                repToUpdate = rep;
-                break;
-            }
-        }
-
-        if (repToUpdate != null) {
-            repToUpdate.setStatus("Approved");
+    public boolean approveRegistration(CompanyRepresentative repToApprove) {
+        if (repToApprove != null) {
+            repToApprove.setStatus("Approved");
             return rewriteCompanyRepCSV(); // Write changes to file
         }
         return false; // Rep not found
     }
 
-    public boolean rejectRegistration(String repId) {
-        CompanyRepresentative repToUpdate = null;
-        for (CompanyRepresentative rep : companyReps) {
-            if (rep.getUserID().equalsIgnoreCase(repId)) {
-                repToUpdate = rep;
-                break;
-            }
-        }
-
-        if (repToUpdate != null) {
-            repToUpdate.setStatus("Rejected");
+    public boolean rejectRegistration(CompanyRepresentative repToReject) {
+        if (repToReject != null) {
+            repToReject.setStatus("Rejected");
             return rewriteCompanyRepCSV(); // Write changes to file
         }
         return false; // Rep not found
@@ -219,42 +245,44 @@ public class CareerCenterStaffController {
                 .collect(Collectors.toList());
     }
 
-    public boolean approveInternship(String internshipId) {
-        Internship internshipToUpdate = null;
-        for (Internship internship : internships) {
-            if (internship.getUUID().toString().equalsIgnoreCase(internshipId)) {
-                internshipToUpdate = internship;
-                break;
-            }
-        }
-
-        if (internshipToUpdate != null) {
-            internshipToUpdate.setStatus("Approved");
+    public boolean approveInternship(Internship internshipToApprove) {
+        if (internshipToApprove != null) {
+            internshipToApprove.setStatus("Approved");
             return rewriteInternshipCSV(); // Write changes to file
         }
         return false; // Internship not found
     }
 
-    public boolean rejectInternship(String internshipId) {
-        Internship internshipToUpdate = null;
-        for (Internship internship : internships) {
-            if (internship.getUUID().toString().equalsIgnoreCase(internshipId)) {
-                internshipToUpdate = internship;
-                break;
-            }
-        }
-
-        if (internshipToUpdate != null) {
-            internshipToUpdate.setStatus("Rejected");
+    public boolean rejectInternship(Internship internshipToReject) {
+        if (internshipToReject != null) {
+            internshipToReject.setStatus("Rejected");
             return rewriteInternshipCSV(); // Write changes to file
         }
         return false; // Internship not found
     }
 
-    // --- Stubs for other methods ---
-    public void getPendingWithdrawals() {
-        System.out.println("... (To be implemented: Logic to get pending withdrawals) ...");
-        // This will likely involve reading a new 'sample_withdrawal_requests.csv'
+
+    // Public Methods for Withdrawal Management
+    public List<Withdrawal> getPendingWithdrawals() {
+        return withdrawals.stream()
+                .filter(withdrawal -> withdrawal.getStatus().equalsIgnoreCase("Pending"))
+                .collect(Collectors.toList());
+    }
+
+    public boolean approveWithdrawal(Withdrawal withdrawalToApprove) {
+        if (withdrawalToApprove != null) {
+            withdrawalToApprove.setStatus("Approved");
+            return rewriteWithdrawalCSV(); // Write changes to file
+        }
+        return false; // Withdrawal not found
+    }
+
+    public boolean rejectWithdrawal(Withdrawal withdrawalToReject) {
+        if (withdrawalToReject != null) {
+            withdrawalToReject.setStatus("Rejected");
+            return rewriteWithdrawalCSV(); // Write changes to file
+        }
+        return false; // Withdrawal not found
     }
 
     public void generateReport() {
@@ -262,9 +290,59 @@ public class CareerCenterStaffController {
         // This will involve loading internships and filtering them
     }
 
-    public List<Internship> viewAllInternships() {
-        System.out.println("... (To be implemented: Logic to view all internships) ...");
-        // This will just call loadInternships()
-        return internships;
+    public List<Internship> viewAllInternships(List<String> statusFilters, List<String> levelFilters,
+                                               List<String> companyFilters, List<String> majorFilters) {
+
+        // Start with a stream of all internships
+        Stream<Internship> stream = internships.stream();
+
+        // Apply status filter if provided
+        if (statusFilters != null && !statusFilters.isEmpty()) {
+            // Normalize the filter list for case-insensitive comparison
+            Set<String> normalizedFilters = statusFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getStatus() != null &&
+                    normalizedFilters.contains(i.getStatus().toLowerCase()));
+        }
+
+        // Apply level filter if provided
+        if (levelFilters != null && !levelFilters.isEmpty()) {
+            Set<String> normalizedFilters = levelFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getLevel() != null &&
+                    normalizedFilters.contains(i.getLevel().toLowerCase()));
+        }
+
+        // Apply company filter if provided
+        if (companyFilters != null && !companyFilters.isEmpty()) {
+            Set<String> normalizedFilters = companyFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getCompanyName() != null &&
+                    normalizedFilters.contains(i.getCompanyName().toLowerCase()));
+        }
+
+        // Apply major filter if provided
+        if (majorFilters != null && !majorFilters.isEmpty()) {
+            Set<String> normalizedFilters = majorFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getPreferredMajor() != null &&
+                    normalizedFilters.contains(i.getPreferredMajor().toLowerCase()));
+        }
+
+        // Collect the results from the stream into a list
+        List<Internship> filteredList = stream.collect(Collectors.toList());
+
+        // Sort the list by title (case-insensitive)
+        filteredList.sort(Comparator.comparing(Internship::getTitle, String.CASE_INSENSITIVE_ORDER));
+
+        return filteredList;
     }
 }
