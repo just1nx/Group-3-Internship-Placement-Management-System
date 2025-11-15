@@ -22,7 +22,7 @@ public class StudentInterface implements CommandLineInterface {
         List<String> notifications = studentController.checkNotifications(student);
 
         if (!notifications.isEmpty()) {
-            System.out.println("\n--- Notifications ---");
+            System.out.println("\n---You have " + notifications.size() + " notification(s)");
             int notificationCount = 1; // Initialize counter
             for (String notification : notifications) {
                 System.out.println(notificationCount + ". " + notification); // Print with number and dot

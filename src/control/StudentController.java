@@ -3,6 +3,7 @@ package control;
 import entity.Application;
 import entity.Internship;
 import entity.Student;
+import entity.Withdrawal;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +17,7 @@ import java.util.stream.Stream;
 public class StudentController extends BaseController {
     private final Map<String, Internship> internships = new HashMap<>();
     private final Map<String, Application> applications = new HashMap<>();
-    private final Map<String, Application> withdrawals = new HashMap<>();
+    private final Map<String, Withdrawal> withdrawals = new HashMap<>();
 
     // Define the path to the application and internship CSV file
     private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
@@ -28,7 +29,7 @@ public class StudentController extends BaseController {
     public StudentController(){
         loadInternships(internshipPath);
         loadApplications(applicationPath);
-        loadApplications(withdrawalPath);
+        loadWithdrawals(withdrawalPath);
     }
 
     private void loadInternships(Path csvPath) {
@@ -84,31 +85,39 @@ public class StudentController extends BaseController {
                         String status = unquote(cols[7]);
 
                         Application application = new Application(UUID.fromString(id), status, submittedDate, userId, name, email, major, year);
-                        withdrawals.put(id, application);
+                        applications.put(id, application);
                     });
         } catch (IOException e) {
             System.err.println("Failed to read application CSV: " + e.getMessage());
         }
     }
 
-    // Helper method to escape special characters for CSV format
-    private String escapeCSV(String s) {
-        if (s == null) s = "";
-        String out = s.replace("\"", "\"\"");
-        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\"";
+    private void loadWithdrawals(Path csvPath) {
+        if (!Files.exists(csvPath)) {
+            System.err.println("CSV not found: " + csvPath);
+            return;
         }
-        return out;
-    }
 
-    // Helper method to unquote fields
-    private String unquote(String s) {
-        if (s == null) return "";
-        s = s.trim();
-        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
-            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        try (Stream<String> lines = Files.lines(csvPath)) {
+            lines.skip(1) // Skip header
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 8)
+                    .forEach(cols -> {
+                        String id = unquote(cols[0]);
+                        String userId = unquote(cols[1]);
+                        String name = unquote(cols[2]);
+                        String email = unquote(cols[3]);
+                        String major = unquote(cols[4]);
+                        int year = Integer.parseInt(unquote(cols[5]));
+                        String submittedDate = unquote(cols[6]);
+                        String status = unquote(cols[7]);
+
+                        Withdrawal withdrawal = new Withdrawal(UUID.fromString(id), status, submittedDate, userId, name, email, major, year);
+                        withdrawals.put(id, withdrawal);
+                    });
+        } catch (IOException e) {
+            System.err.println("Failed to read withdrawal CSV: " + e.getMessage());
         }
-        return s;
     }
 
     public List<Internship> getInternshipsForStudents() {
@@ -306,15 +315,55 @@ public class StudentController extends BaseController {
 
         List<String[]> applicationsToRemove = new ArrayList<>();
         List<String[]> withdrawalsToRemove = new ArrayList<>();
-        //[InternshipUUID, StudentID, NewStatus]
-        List<String[]> applicationsToUpdateStatus = new ArrayList<>();
 
         // Helper to split lines correctly (handles quoted CSV fields)
         java.util.function.Function<String, String[]> splitLine = line ->
                 line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
-        // --- 1. Check application status updates (Accepted/Rejected) ---
-        // Application file structure: 0:UUID, 1:UserId, ..., 7:Status
+        // Set to hold Internship IDs for which a withdrawal request exists,
+        // so we don't process the basic application status first.
+        Set<String> withdrawalRequestIds = new HashSet<>();
+
+        // --- A. PRE-STEP: Populate Withdrawal Request IDs for the student ---
+        try (Stream<String> lines = Files.lines(withdrawalPath)) {
+            lines.skip(1)
+                    .map(splitLine)
+                    .filter(cols -> cols.length == 8)
+                    .filter(cols -> unquote(cols[1]).equals(studentID))
+                    .forEach(cols -> withdrawalRequestIds.add(unquote(cols[0])));
+        } catch (IOException e) {
+            System.err.println("Error reading withdrawal file to check existing requests: " + e.getMessage());
+        }
+
+        // --- 1. Check withdrawal request updates (Approved/Rejected/Denied) ---
+        try (Stream<String> lines = Files.lines(withdrawalPath)) {
+            lines.skip(1)
+                    .map(splitLine)
+                    .filter(cols -> cols.length == 8)
+                    .filter(cols -> unquote(cols[1]).equals(studentID))
+                    .forEach(cols -> {
+                        String status = unquote(cols[7]); // Status is at index 7
+                        String internshipId = unquote(cols[0]);
+                        Internship internship = internships.get(internshipId);
+                        String internshipTitle = internship.getTitle();
+
+                        if (status.equalsIgnoreCase("Approved")) {
+                            notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been approved.");
+                            // Approved withdrawal means the original application must be removed
+                            applicationsToRemove.add(new String[]{internshipId, studentID});
+                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
+                        } else if (status.equalsIgnoreCase("Rejected")) { // Using "Rejected" from your provided code, assuming it means "Denied"
+                            notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been rejected. Your original application status is restored.");
+                            // Denied withdrawal means the withdrawal request is removed
+                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("Error reading withdrawal request file for notifications: " + e.getMessage());
+        }
+
+        // --- 2. Check application status updates (Approved/Rejected) ---
+        // Only process applications that DONT have a pending/resolved withdrawal request (already handled in step 1)
         try (Stream<String> lines = Files.lines(applicationPath)) {
             lines.skip(1)
                     .map(splitLine)
@@ -326,46 +375,23 @@ public class StudentController extends BaseController {
 
                         Internship internship = internships.get(internshipId);
 
+                        // Skip this application if a withdrawal request was found for it (handled in step 1)
+                        if (withdrawalRequestIds.contains(internshipId)) {
+                            return;
+                        }
+
+                        String internshipTitle = internship.getTitle();
+
                         if (status.equalsIgnoreCase("Approved")) {
-                            notifications.add("Your application for Internship: " + internship.getTitle() + " has been approved.");
+                            notifications.add("Your application for Internship: " + internshipTitle + " has been approved.");
                         } else if (status.equalsIgnoreCase("Rejected")) {
-                            notifications.add("Your application for Internship: " + internship.getTitle() + " has been rejected.");
+                            notifications.add("Your application for Internship: " + internshipTitle + " has been rejected.");
                             applicationsToRemove.add(new String[]{internshipId, studentID});
                         }
                     });
         } catch (IOException e) {
             System.err.println("Error reading application file for notifications: " + e.getMessage());
         }
-
-        // --- 2. Check withdrawal request updates (Approved/Denied) ---
-        // Withdrawal file uses the SAME 8-column structure: 0:UUID, 1:UserId, ..., 7:Status
-        try (Stream<String> lines = Files.lines(withdrawalPath)) {
-            lines.skip(1)
-                    .map(splitLine)
-                    .filter(cols -> cols.length == 8)
-                    .filter(cols -> unquote(cols[1]).equals(studentID))
-                    .forEach(cols -> {
-                        String status = unquote(cols[7]); // Status is at index 7
-                        String internshipId = unquote(cols[0]);
-
-                        Internship internship = internships.get(internshipId);
-
-                        if (status.equalsIgnoreCase("Approved")) {
-                            notifications.add("Your withdrawal request for Internship: " + internship.getTitle() + " has been approved.");
-                            // Approved withdrawal means the original application must be removed
-                            applicationsToRemove.add(new String[]{internshipId, studentID});
-                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
-                        } else if (status.equalsIgnoreCase("Rejected")) {
-                            notifications.add("Your withdrawal request for Internship: " + internship.getTitle() + " has been rejected. Your original application status is restored.");
-                            // Denied withdrawal means the withdrawal request is removed, and the original application status is restored to "Pending"
-                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Error reading withdrawal request file for notifications: " + e.getMessage());
-        }
-
-        // --- 3. Post-Processing: Cleanup and Updates (Efficient single file operations) ---
 
         // Remove Applications
         for (String[] app : applicationsToRemove) {
@@ -425,36 +451,6 @@ public class StudentController extends BaseController {
             Files.write(withdrawalPath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             System.err.println("Error removing withdrawal request: " + e.getMessage());
-        }
-    }
-
-    public void updateApplicationStatus(String internshipId, String studentId, String newStatus) {
-        try {
-            List<String> lines = Files.readAllLines(applicationPath);
-            List<String> updatedLines = new ArrayList<>();
-            updatedLines.add(lines.get(0)); // Keep header
-
-            for (int i = 1; i < lines.size(); i++) {
-                String line = lines.get(i);
-                String[] cols = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                if (cols.length == 8) {
-                    String fileInternshipId = unquote(cols[0]);
-                    String fileStudentId = unquote(cols[1]);
-
-                    if (fileInternshipId.equals(internshipId) && fileStudentId.equals(studentId)) {
-                        // Found the application, update the status (col 7)
-                        cols[7] = escapeCSV(newStatus);
-                        // Re-join the updated columns into a new CSV line
-                        line = String.join(",", cols);
-                    }
-                }
-                updatedLines.add(line);
-            }
-
-            Files.write(applicationPath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            System.err.println("Error updating application status: " + e.getMessage());
         }
     }
 }
