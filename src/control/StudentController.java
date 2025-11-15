@@ -26,59 +26,55 @@ public class StudentController {
     }
 
     private void loadInternships(Path csvPath) {
-        if (csvPath == null || !Files.exists(csvPath)) {
+        if (!Files.exists(internshipPath)) {
             System.err.println("Internship CSV not found: " + csvPath);
             return;
         }
 
         try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1)
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0)
+            lines.skip(1) // Skip header
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 12)
                     .forEach(cols -> {
-                        String id = cols.length > 0 ? cols[0].trim() : "";
-                        if (id.isEmpty()) return;
+                        String id = unquote(cols[0]);
+                        String title = unquote(cols[1]);
+                        String description = unquote(cols[2]);
+                        String level = unquote(cols[3]);
+                        String preferredMajor = unquote(cols[4]);
+                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
+                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
+                        String status = unquote(cols[7]);
+                        String companyName = unquote(cols[8]);
+                        String representatives = unquote(cols[9]);
+                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
+                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
 
-                        String title = cols.length > 1 ? cols[1].trim() : "";
-                        String description = cols.length > 2 ? cols[2].trim() : "";
-                        String level = cols.length > 3 ? cols[3].trim() : "";
-                        //required to trim the extra quotation mark from preferredMajor
-                        String preferredMajor = cols.length > 4 ? cols[4].trim().replace("\"", "") : "";
-                        //
-                        LocalDate openingDate = LocalDate.now();
-                        if (cols.length > 5) {
-                            try {
-                                String dateString = cols[5].trim();
-                                openingDate = LocalDate.parse(dateString);
-                            } catch (NumberFormatException ignored) {
-                            }
-                        }
-                        LocalDate closingDate = LocalDate.now();
-                        if (cols.length > 6) {
-                            try {
-                                String dateString = cols[6].trim();
-                                closingDate = LocalDate.parse(dateString);
-                            } catch (NumberFormatException ignored) {
-                            }
-                        }
-                        String status = cols.length > 7 ? cols[7].trim() : "";
-                        String companyName = cols.length > 8 ? cols[8].trim() : "";
-                        String representatives = cols.length > 9 ? cols[9].trim() : "";
-                        String numberOfSlots = cols.length > 10 ? cols[10].trim() : "";
-
-                        Boolean visibility = false;
-                        if (cols.length > 11) {
-                            try {
-                                visibility = Boolean.parseBoolean(cols[11].trim());
-                            } catch (NumberFormatException ignored) {
-                            }
-                        }
                         Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
                         internships.put(id, internship);
                     });
         } catch (IOException e) {
             System.err.println("Failed to read internship CSV: " + e.getMessage());
         }
+    }
+
+    // Helper method to escape special characters for CSV format
+    private String escapeCSV(String s) {
+        if (s == null) s = "";
+        String out = s.replace("\"", "\"\"");
+        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
+            out = "\"" + out + "\"";
+        }
+        return out;
+    }
+
+    // Helper method to unquote fields
+    private String unquote(String s) {
+        if (s == null) return "";
+        s = s.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        }
+        return s;
     }
 
     public List<Internship> getInternshipsForStudents() {
@@ -213,26 +209,16 @@ public class StudentController {
         String status = "Pending"; // Default status
         String date = LocalDate.now().toString();
 
-        // 2. Sanitization Helper
-        java.util.function.Function<String, String> esc = s -> {
-            if (s == null) s = "";
-            String out = s.replace("\"", "\"\"");
-            if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-                out = "\"" + out + "\"";
-            }
-            return out;
-        };
-
         // 3. Format CSV Line: Uuid,Userid,Name,Email,Major,Year,SubmittedDate,Status
         String csvLine = String.join(",",
-                esc.apply(internship.getUUID().toString()),
-                esc.apply(student.getUserID()),
-                esc.apply(student.getName()),
-                esc.apply(student.getEmail()),
-                esc.apply(student.getMajor()),
-                esc.apply(String.valueOf(student.getYearOfStudy())),
-                esc.apply(date),
-                esc.apply(status)
+                escapeCSV(internship.getUUID().toString()),
+                escapeCSV(student.getUserID()),
+                escapeCSV(student.getName()),
+                escapeCSV(student.getEmail()),
+                escapeCSV(student.getMajor()),
+                escapeCSV(String.valueOf(student.getYearOfStudy())),
+                escapeCSV(date),
+                escapeCSV(status)
         );
 
         // 4. Write to File

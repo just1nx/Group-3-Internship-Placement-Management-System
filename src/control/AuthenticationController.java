@@ -31,30 +31,23 @@ public class AuthenticationController {
     }
 
     private void loadStudents(Path csvPath) {
-        if (csvPath == null || !Files.exists(csvPath)) {
+        if (!Files.exists(csvPath)) {
             System.err.println("Student CSV not found: " + csvPath);
             return;
         }
 
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1)
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0)
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 6)
                     .forEach(cols -> {
-                        String id = cols.length > 0 ? cols[0].trim() : "";
-                        if (id.isEmpty()) return;
-
-                        String name = cols.length > 1 ? cols[1].trim() : "";
-                        String major = cols.length > 2 ? cols[2].trim() : "";
-                        int year = 0;
-                        if (cols.length > 3) {
-                            try {
-                                year = Integer.parseInt(cols[3].trim());
-                            } catch (NumberFormatException ignored) {
-                            }
-                        }
-                        String email = cols.length > 4 ? cols[4].trim() : "";
-                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : "password";
+                        String id = unquote(cols[0]);
+                        String name = unquote(cols[1]);
+                        String major = unquote(cols[2]);
+                        int year = Integer.parseInt(unquote(cols[3]));
+                        String email = unquote(cols[4]);
+                        String pw = unquote(cols[5]);
+                        pw = pw.isEmpty() ? "password" : pw;
 
                         Student student = new Student(id, name, pw, email, year, major);
                         students.put(id, student);
@@ -65,24 +58,23 @@ public class AuthenticationController {
     }
 
     private void loadStaff(Path csvPath) {
-        if (csvPath == null || !Files.exists(csvPath)) {
+        if (!Files.exists(csvPath)) {
             System.err.println("Staff CSV not found: " + csvPath);
             return;
         }
 
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1)
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0)
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 6)
                     .forEach(cols -> {
-                        String id = cols.length > 0 ? cols[0].trim() : "";
-                        if (id.isEmpty()) return;
-
-                        String name = cols.length > 1 ? cols[1].trim() : "";
-                        String role = cols.length > 2 ? cols[2].trim() : "";
-                        String department = cols.length > 3 ? cols[3].trim() : "";
-                        String email = cols.length > 4 ? cols[4].trim() : "";
-                        String pw = cols.length > 5 && !cols[5].trim().isEmpty() ? cols[5].trim() : "password";
+                        String id = unquote(cols[0]);
+                        String name = unquote(cols[1]);
+                        String role = unquote(cols[2]);
+                        String department = unquote(cols[3]);
+                        String email = unquote(cols[4]);
+                        String pw = unquote(cols[5]);
+                        pw = pw.isEmpty() ? "password" : pw;
 
                         CareerCenterStaff careerStaff = new CareerCenterStaff(id, name, pw, email, department, role);
                         staff.put(id, careerStaff);
@@ -93,26 +85,25 @@ public class AuthenticationController {
     }
 
     private void loadCompanyReps(Path csvPath) {
-        if (csvPath == null || !Files.exists(csvPath)) {
+        if (!Files.exists(csvPath)) {
             System.err.println("Company representatives CSV not found: " + csvPath);
             return;
         }
 
         try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1)
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0)
+            lines.skip(1) // Skip header
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 8)
                     .forEach(cols -> {
-                        String id = cols.length > 0 ? cols[0].trim() : "";
-                        if (id.isEmpty()) return;
-
-                        String name = cols.length > 1 ? cols[1].trim() : "";
-                        String companyName = cols.length > 2 ? cols[2].trim() : "";
-                        String department = cols.length > 3 ? cols[3].trim() : "";
-                        String position = cols.length > 4 ? cols[4].trim() : "";
-                        String email = cols.length > 5 ? cols[5].trim() : "";
-                        String status = cols.length > 6 ? cols[6].trim() : "";
-                        String pw = cols.length > 7 && !cols[7].trim().isEmpty() ? cols[7].trim() : "password";
+                        String id = unquote(cols[0]);
+                        String name = unquote(cols[1]);
+                        String companyName = unquote(cols[2]);
+                        String department = unquote(cols[3]);
+                        String position = unquote(cols[4]);
+                        String email = unquote(cols[5]);
+                        String status = unquote(cols[6]);
+                        String pw = unquote(cols[7]);
+                        pw = pw.isEmpty() ? "password" : pw;
 
                         CompanyRepresentative companyRep = new CompanyRepresentative(id, name, pw, email, companyName, department, position, status);
                         companyReps.put(id, companyRep);
@@ -261,13 +252,24 @@ public class AuthenticationController {
         }
     }
 
+    // Helper method to escape special characters for CSV format
     private String escapeCSV(String s) {
         if (s == null) s = "";
-        String out = s.replace("\"", "\"\""); // Escape existing quotes
+        String out = s.replace("\"", "\"\"");
         if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\""; // Wrap in quotes
+            out = "\"" + out + "\"";
         }
         return out;
+    }
+
+    // Helper method to unquote fields
+    private String unquote(String s) {
+        if (s == null) return "";
+        s = s.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        }
+        return s;
     }
 
     // TODO: Password hashing function

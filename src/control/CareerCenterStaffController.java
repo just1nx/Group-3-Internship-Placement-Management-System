@@ -22,7 +22,6 @@ public class CareerCenterStaffController {
     private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
 
-
     public CareerCenterStaffController() {
         loadCompanyReps(companyRepPath);
         loadInternships(internshipPath);
@@ -37,17 +36,18 @@ public class CareerCenterStaffController {
 
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1) // Skip header
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0 && !cols[0].trim().isEmpty())
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 8)
                     .forEach(cols -> {
-                        String id = cols[0].trim();
-                        String name = cols.length > 1 ? cols[1].trim() : "";
-                        String companyName = cols.length > 2 ? cols[2].trim() : "";
-                        String department = cols.length > 3 ? cols[3].trim() : "";
-                        String position = cols.length > 4 ? cols[4].trim() : "";
-                        String email = cols.length > 5 ? cols[5].trim() : "";
-                        String status = cols.length > 6 ? cols[6].trim() : "Pending";
-                        String pw = cols.length > 7 && !cols[7].trim().isEmpty() ? cols[7].trim() : "password";
+                        String id = unquote(cols[0]);
+                        String name = unquote(cols[1]);
+                        String companyName = unquote(cols[2]);
+                        String department = unquote(cols[3]);
+                        String position = unquote(cols[4]);
+                        String email = unquote(cols[5]);
+                        String status = unquote(cols[6]);
+                        String pw = unquote(cols[7]);
+                        pw = pw.isEmpty() ? "password" : pw;
 
                         CompanyRepresentative companyRep = new CompanyRepresentative(id, name, pw, email, companyName, department, position, status);
                         companyReps.add(companyRep);
@@ -65,23 +65,23 @@ public class CareerCenterStaffController {
 
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1) // Skip header
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 0 && !cols[0].trim().isEmpty())
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 12)
                     .forEach(cols -> {
-                        UUID id = UUID.fromString(cols[0].trim());
-                        String title = cols.length > 1 ? cols[1].trim() : "";
-                        String description = cols.length > 2 ? cols[2].trim() : "";
-                        String level = cols.length > 3 ? cols[3].trim() : "";
-                        String preferredMajor = cols.length > 4 ? cols[4].trim() : "";
-                        LocalDate openingDate = LocalDate.parse(cols[5].trim()); // Assumes valid format
-                        LocalDate closingDate = LocalDate.parse(cols[6].trim()); // Assumes valid format
-                        String status = cols.length > 7 ? cols[7].trim() : "Pending";
-                        String companyName = cols.length > 8 ? cols[8].trim() : "";
-                        String representatives = cols.length > 9 ? cols[9].trim() : "";
-                        String numberOfSlots = cols.length > 10 ? cols[10].trim() : "0";
-                        boolean visibility = cols.length > 11 && Boolean.parseBoolean(cols[11].trim());
+                        String id = unquote(cols[0]);
+                        String title = unquote(cols[1]);
+                        String description = unquote(cols[2]);
+                        String level = unquote(cols[3]);
+                        String preferredMajor = unquote(cols[4]);
+                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
+                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
+                        String status = unquote(cols[7]);
+                        String companyName = unquote(cols[8]);
+                        String representatives = unquote(cols[9]);
+                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
+                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
 
-                        Internship internship = new Internship(id, title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
+                        Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
                         internships.add(internship);
                     });
         } catch (IOException e) {
@@ -136,7 +136,7 @@ public class CareerCenterStaffController {
                     escapeCSV(internship.getStatus()),
                     escapeCSV(internship.getCompanyName()),
                     escapeCSV(internship.getRepresentatives()),
-                    escapeCSV(internship.getNumberOfSlots()),
+                    escapeCSV(String.valueOf(internship.getNumberOfSlots())),
                     escapeCSV(String.valueOf(internship.isVisible()).toUpperCase()) // Format boolean to string
             ));
         }
@@ -151,13 +151,24 @@ public class CareerCenterStaffController {
         }
     }
 
+    // Helper method to escape special characters for CSV format
     private String escapeCSV(String s) {
         if (s == null) s = "";
-        String out = s.replace("\"", "\"\""); // Escape existing quotes
+        String out = s.replace("\"", "\"\"");
         if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\""; // Wrap in quotes
+            out = "\"" + out + "\"";
         }
         return out;
+    }
+
+    // Helper method to unquote fields
+    private String unquote(String s) {
+        if (s == null) return "";
+        s = s.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        }
+        return s;
     }
 
 

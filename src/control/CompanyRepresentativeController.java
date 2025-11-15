@@ -30,47 +30,30 @@ public class CompanyRepresentativeController {
     }
 
     private void loadInternships(Path csvPath) {
-        if (csvPath == null || !Files.exists(csvPath)) {
+        if (!Files.exists(csvPath)) {
             System.err.println("Internship CSV not found: " + csvPath);
             return;
         }
 
         try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1)
-                    .map(line -> line.split(",", -1)) // handle quoted commas
-                    .filter(cols -> cols.length > 0)
+            lines.skip(1) // Skip header
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 12)
                     .forEach(cols -> {
-                        String id = cols.length > 0 ? cols[0].trim() : "";
-                        if (id.isEmpty()) return;
+                        String id = unquote(cols[0]);
+                        String title = unquote(cols[1]);
+                        String description = unquote(cols[2]);
+                        String level = unquote(cols[3]);
+                        String preferredMajor = unquote(cols[4]);
+                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
+                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
+                        String status = unquote(cols[7]);
+                        String companyName = unquote(cols[8]);
+                        String representatives = unquote(cols[9]);
+                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
+                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
 
-                        String title = cols.length > 1 ? cols[1].trim() : "";
-                        String description = cols.length > 2 ? cols[2].trim() : "";
-                        String level = cols.length > 3 ? cols[3].trim() : "";
-                        String preferredMajor = cols.length > 4 ? cols[4].trim() : "";
-
-                        LocalDate openingDate = LocalDate.now();
-                        if (cols.length > 5) {
-                            try { openingDate = LocalDate.parse(cols[5].trim()); } catch (Exception ignored) {}
-                        }
-                        LocalDate closingDate = LocalDate.now();
-                        if (cols.length > 6) {
-                            try { closingDate = LocalDate.parse(cols[6].trim()); } catch (Exception ignored) {}
-                        }
-
-                        String status = cols.length > 7 ? cols[7].trim() : "";
-                        String companyName = cols.length > 8 ? cols[8].trim() : "";
-                        String representatives = cols.length > 9 ? cols[9].trim() : "";
-                        String numberOfSlots = cols.length > 10 ? cols[10].trim() : "";
-
-                        Boolean visibility = false;
-                        if (cols.length > 11) {
-                            try { visibility = Boolean.parseBoolean(cols[11].trim()); } catch (Exception ignored) {}
-                        }
-
-                        Internship internship = new Internship(UUID.fromString(id), title, description, level,
-                                preferredMajor, openingDate, closingDate, status, companyName,
-                                representatives, numberOfSlots, visibility);
-
+                        Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
                         internships.put(id, internship);
                     });
         } catch (IOException e) {
@@ -86,27 +69,21 @@ public class CompanyRepresentativeController {
 
         try (Stream<String> lines = Files.lines(csvPath)) {
             lines.skip(1) // skip header
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 7) // Must have at least 8 columns
+                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
+                    .filter(cols -> cols.length == 8) // Must have 8 columns
                     .forEach(cols -> {
                         // This is the Internship's UUID, used as the key for the map
-                        String internshipId = cols[0].trim();
-
-                        // This is the SAME UUID, used as the ID for the Application object
-                        // as required by the Application constructor
+                        String internshipId = unquote(cols[0]);
                         UUID appUuid = UUID.fromString(internshipId);
 
-                        String userId = cols[1].trim();
-                        String name = cols[2].trim();
-                        String email = cols[3].trim();
-                        String major = cols[4].trim();
-                        int year = Integer.parseInt(cols[5].trim());
-                        String submittedDate = cols[6].trim();
-                        String status = cols[7].trim();
+                        String userId = unquote(cols[1]);
+                        String name = unquote(cols[2]);
+                        String email = unquote(cols[3]);
+                        String major = unquote(cols[4]);
+                        int year = Integer.parseInt(unquote(cols[5]));
+                        String submittedDate = unquote(cols[6]);
+                        String status = unquote(cols[7]);
 
-                        // Create the Application object using the 8-param constructor
-                        // public Application(UUID id, String status, String submittedDate, String userID,
-                        //                    String name, String email, String major, int year)
                         Application app = new Application(appUuid, status, submittedDate, userId, name, email, major, year);
 
                         // Add it to the map, grouped by its Internship ID
@@ -136,7 +113,7 @@ public class CompanyRepresentativeController {
                     escapeCSV(internship.getStatus()),
                     escapeCSV(internship.getCompanyName()),
                     escapeCSV(internship.getRepresentatives()),
-                    escapeCSV(internship.getNumberOfSlots()),
+                    escapeCSV(String.valueOf(internship.getNumberOfSlots())),
                     escapeCSV(String.valueOf(internship.isVisible())) // "true" or "false"
             ));
         }
@@ -158,9 +135,6 @@ public class CompanyRepresentativeController {
 
         // Add data lines from in-memory map
         for (Map.Entry<String, List<Application>> entry : applicationsByInternshipId.entrySet()) {
-            // The InternshipUUID is the key, and it's ALSO stored in app.getUUID()
-            String internshipId = entry.getKey();
-
             for (Application app : entry.getValue()) {
                 lines.add(String.join(",",
                         escapeCSV(app.getUUID().toString()), // 0: UUID (which is the InternshipUUID)
@@ -193,6 +167,16 @@ public class CompanyRepresentativeController {
             out = "\"" + out + "\"";
         }
         return out;
+    }
+
+    // Helper method to unquote fields
+    private String unquote(String s) {
+        if (s == null) return "";
+        s = s.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
+        }
+        return s;
     }
 
     public boolean canCreateMoreInternships(String companyName) {
@@ -230,7 +214,7 @@ public class CompanyRepresentativeController {
             String closingDate,
             String companyName,
             String representativeId, // This is the 'Representatives' field
-            String numberOfSlots
+            int numberOfSlots
     ) {
         // 1. Generate unique ID and set default values
         UUID uuid = UUID.randomUUID();
@@ -296,7 +280,7 @@ public class CompanyRepresentativeController {
             if (newPreferredMajor != null && !newPreferredMajor.isEmpty()) internship.setPreferredMajor(newPreferredMajor);
             if (newOpeningDate != null && !newOpeningDate.isEmpty()) internship.setOpeningDate(LocalDate.parse(newOpeningDate));
             if (newClosingDate != null && !newClosingDate.isEmpty()) internship.setClosingDate(LocalDate.parse(newClosingDate));
-            if (newNumberOfSlots != null && !newNumberOfSlots.isEmpty()) internship.setNumberOfSlots(newNumberOfSlots);
+            if (newNumberOfSlots != null && !newNumberOfSlots.isEmpty()) internship.setNumberOfSlots(Integer.parseInt(newNumberOfSlots));
         } catch (Exception e) {
             System.err.println("Failed to parse new data (e.g., date): " + e.getMessage());
             return false;

@@ -7,19 +7,19 @@ public class Internship {
     private UUID id;
     private String title;
     private String description;
-    private String level; //Basic, Intermediate, Advanced
-    private String preferredMajor; //Assume 1 preferred major will do
+    private String level; // Basic, Intermediate, Advanced
+    private String preferredMajor;
     private LocalDate openingDate;
     private LocalDate closingDate;
-    private String status; //“Pending”, “Approved”, “Rejected”, “Filled”
+    private String status; // “Pending”, “Approved”, “Rejected”, “Filled”
     private String companyName;
     private String representatives;
-    private String numberOfSlots; //max 10
-    private boolean visibility; //true or false
+    private int numberOfSlots; // Max 10
+    private boolean visibility; // True or False
 
     public Internship(UUID id, String title, String description, String level, String preferredMajor,
                       LocalDate openingDate, LocalDate closingDate, String status,
-                      String companyName, String representatives, String numberOfSlots, boolean visibility) {
+                      String companyName, String representatives, int numberOfSlots, boolean visibility) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -31,7 +31,7 @@ public class Internship {
         this.companyName = companyName;
         this.representatives = representatives;
         this.numberOfSlots = numberOfSlots;
-        this.visibility = visibility; //default to false until approved
+        this.visibility = visibility;
     }
 
     public UUID getUUID() {
@@ -110,11 +110,11 @@ public class Internship {
         this.representatives = representatives;
     }
 
-    public String getNumberOfSlots() {
+    public int getNumberOfSlots() {
         return numberOfSlots;
     }
 
-    public void setNumberOfSlots(String numberOfSlots) {
+    public void setNumberOfSlots(int numberOfSlots) {
         this.numberOfSlots = numberOfSlots;
     }
 
