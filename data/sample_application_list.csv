@@ -2,7 +2,7 @@ UUID,UserId,Name,Email,Major,Year,SubmittedDate,Status
 a1b2c3d4-0002-4002-8002-0a0b0c0d0e02,U2310002B,Ng Jia Hao,ng002@e.ntu.edu.sg,Data Science & AI,3,2025-11-06,Approved
 a1b2c3d4-0002-4002-8002-0a0b0c0d0e02,U2310001A,Tan Wei Ling,tan001@e.ntu.edu.sg,Computer Science,2,2025-11-07,Approved
 a1b2c3d4-0006-4006-8006-0a0b0c0d0e06,U2310004D,Chong Zhi Hao,chong004@e.ntu.edu.sg,Information Engineering & Media,1,2025-11-11,Pending
-a1b2c3d4-0001-4001-8001-0a0b0c0d0e01,U2310001A,Tan Wei Ling,tan001@e.ntu.edu.sg,Computer Science,2,2025-11-05,Approved
+a1b2c3d4-0001-4001-8001-0a0b0c0d0e01,U2310001A,Tan Wei Ling,tan001@e.ntu.edu.sg,Computer Science,2,2025-11-05,Rejected
 a1b2c3d4-0001-4001-8001-0a0b0c0d0e01,U2310003C,Lim Yi Xuan,lim003@e.ntu.edu.sg,Computer Engineering,4,2025-11-07,Pending
 a1b2c3d4-0001-4001-8001-0a0b0c0d0e01,U2310005E,Wong Shu Hui,wong005@e.ntu.edu.sg,Computer Science,3,2025-11-10,Pending
 a1b2c3d4-0004-4004-8004-0a0b0c0d0e04,U2310003C,Lim Yi Xuan,lim003@e.ntu.edu.sg,Computer Engineering,4,2025-11-08,Approved

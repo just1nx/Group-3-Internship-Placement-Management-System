@@ -23,9 +23,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     public void display() {
         boolean running = true;
         while (running) {
-            System.out.println("\n==========================================");
+            System.out.println("\n=========================================================");
             System.out.println("Company Representative Menu - Welcome, " + companyRep.getName() + ", " + companyRep.getCompanyName());
-            System.out.println("==========================================");
+            System.out.println("=========================================================");
             System.out.println("1. Create Internship Opportunity");
             System.out.println("2. Edit Internship Opportunity");
             System.out.println("3. Delete Internship Opportunity");

@@ -120,7 +120,7 @@ public class CompanyRepresentativeController {
 
         // Write to file, overwriting existing content
         try {
-            Files.write(internshipPath, lines, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(internshipPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to rewrite internship CSV: " + e.getMessage());
@@ -151,7 +151,7 @@ public class CompanyRepresentativeController {
 
         // Write to file, overwriting existing content
         try {
-            Files.write(applicationPath, lines, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(applicationPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to rewrite application CSV: " + e.getMessage());
@@ -188,6 +188,8 @@ public class CompanyRepresentativeController {
         long count = internships.values().stream()
                 .filter(i -> i.getCompanyName() != null &&
                         i.getCompanyName().trim().equalsIgnoreCase(companyName.trim()))
+                .filter(i -> i.getStatus() != null &&
+                        !i.getStatus().equalsIgnoreCase("Rejected"))
                 .count();
 
         // Return true if the current count is less than the maximum allowed.
