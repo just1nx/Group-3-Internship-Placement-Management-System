@@ -243,29 +243,18 @@ public class CompanyRepresentativeController {
     }
 
     public boolean editInternship(
-            String companyName,
-            int number,
+            String internshipUUID,
             String newTitle,
             String newDescription,
             String newLevel,
             String newPreferredMajor,
             String newOpeningDate,
             String newClosingDate,
-            String newNumberOfSlots
+            int newNumberOfSlots
     ) {
-        List<Internship> internshipList = viewMyInternships(companyName); // Gets from in-memory map
-        if (internshipList.isEmpty()) {
-            System.err.println("You have no internships listed.");
-            return false;
-        }
-        if (number < 1 || number > internshipList.size()) {
-            System.err.println("Error: Invalid internship number.");
-            return false;
-        }
+        Internship internship = internships.get(internshipUUID);
 
-        Internship internship = internshipList.get(number - 1);
-
-        // Deny edits if approved
+        // Deny edit unless internship is still pending
         String status = internship.getStatus();
         if (status != null && !status.toLowerCase().contains("pending")) {
             System.err.println("Cannot edit internship unless it is pending.");
@@ -280,7 +269,7 @@ public class CompanyRepresentativeController {
             if (newPreferredMajor != null && !newPreferredMajor.isEmpty()) internship.setPreferredMajor(newPreferredMajor);
             if (newOpeningDate != null && !newOpeningDate.isEmpty()) internship.setOpeningDate(LocalDate.parse(newOpeningDate));
             if (newClosingDate != null && !newClosingDate.isEmpty()) internship.setClosingDate(LocalDate.parse(newClosingDate));
-            if (newNumberOfSlots != null && !newNumberOfSlots.isEmpty()) internship.setNumberOfSlots(Integer.parseInt(newNumberOfSlots));
+            if (newNumberOfSlots >= 1 && newNumberOfSlots <= 10) internship.setNumberOfSlots(newNumberOfSlots);
         } catch (Exception e) {
             System.err.println("Failed to parse new data (e.g., date): " + e.getMessage());
             return false;
@@ -290,24 +279,13 @@ public class CompanyRepresentativeController {
         return rewriteInternshipCSV();
     }
 
-    public boolean deleteInternship(String companyName, int number) {
-        List<Internship> internshipList = viewMyInternships(companyName); // Gets from in-memory map
-        if (internshipList.isEmpty()) {
-            System.err.println("You have no internships listed.");
-            return false;
-        }
+    public boolean deleteInternship(String internshipUUID) {
+        Internship internship = internships.get(internshipUUID);
 
-        if (number < 1 || number > internshipList.size()) {
-            System.err.println("Error: Invalid internship number.");
-            return false;
-        }
-
-        Internship internship = internshipList.get(number - 1);
-
-        // Prevent deletion if the internship has been approved
+        // Deny deletion unless internship is still pending
         String status = internship.getStatus();
-        if (status != null && status.toLowerCase().contains("approved")) {
-            System.err.println("Cannot Delete: Internship has already been approved.");
+        if (status != null && !status.toLowerCase().contains("pending")) {
+            System.err.println("Cannot delete internship unless it is pending.");
             return false;
         }
 
@@ -318,19 +296,16 @@ public class CompanyRepresentativeController {
         return rewriteInternshipCSV();
     }
 
-    public boolean toggleInternshipVisibility(String companyName, int number, int option) {
-        List<Internship> internshipList = viewMyInternships(companyName); // Gets from in-memory map
-        if (internshipList.isEmpty()) {
-            System.err.println("You have no internships listed.");
+    public boolean toggleInternshipVisibility(String internshipUUID, int option) {
+        Internship internship = internships.get(internshipUUID);
+
+        // Only allow toggling if the internship is approved
+        String status = internship.getStatus();
+        if (status == null || !status.toLowerCase().contains("approved")) {
+            System.err.println("Cannot change visibility: Internship must be approved before toggling visibility.\n");
             return false;
         }
 
-        if (number < 1 || number > internshipList.size()) {
-            System.err.println("Error: Invalid internship number.");
-            return false;
-        }
-
-        Internship internship = internshipList.get(number - 1);
         boolean newVisibility = (option == 1); // 1 for visible, 2 for not visible
 
         // Update the object in the map

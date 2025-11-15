@@ -158,22 +158,23 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-    private int promptForNumber() {
+    private int promptForInternshipNumber(int maxSize) {
         while (true) {
-            System.out.print("Enter the internship number (or 0 to Cancel): ");
-            String number = scanner.nextLine();
+            System.out.print("Enter the internship number (1-" + maxSize + ", or 0 to Cancel): ");
+            String numberStr = scanner.nextLine();
 
-            if (number.equals("0")) {
+            if (numberStr.equals("0")) {
                 System.out.println("Cancelled Operation.");
                 return -1;
             }
 
             try {
-                int number2 = Integer.parseInt(number);
-                if (number2 >= 1 &&  number2 <= companyRepController.viewMyInternships(companyRep.getCompanyName()).size()) {
-                    return number2;
+                int number = Integer.parseInt(numberStr);
+                // Validate against the max size passed in
+                if (number >= 1 && number <= maxSize) {
+                    return number;
                 } else {
-                    System.out.println("Invalid input. Please enter a valid internship number.");
+                    System.out.println("Invalid input. Please enter a valid internship number (1-" + maxSize + ").");
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input. Please enter a number.");
@@ -250,6 +251,30 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    private void displayInternshipList(List<Internship> myInternships) {
+        if (myInternships.isEmpty()) {
+            System.out.println("\n--- No internships found for " + companyRep.getCompanyName() + " ---");
+            return;
+        }
+
+        System.out.println("\n--- My Internships ---");
+        int index = 1;
+        for (Internship internship : myInternships) {
+            System.out.println("\n--- Internship #" + index++ + " ---");
+            System.out.println("UUID: " + internship.getUUID());
+            System.out.println("Title: " + internship.getTitle());
+            System.out.println("Description: " + internship.getDescription());
+            System.out.println("Preferred Major: " + internship.getPreferredMajor());
+            System.out.println("Level: " + internship.getLevel());
+            System.out.println("Slots: " + internship.getNumberOfSlots());
+            System.out.println("Application Period: " + internship.getOpeningDate() + " -> " + internship.getClosingDate());
+            System.out.println("Status: " + internship.getStatus());
+            String visibilityDisplay = internship.isVisible() ? "ON" : "OFF";
+            System.out.println("Visibility: " + visibilityDisplay);
+            System.out.println("\n==============================================");
+        }
+    }
+
 
     private void handleCreateInternship() {
         System.out.println("\n--- Create New Internship Opportunity ---");
@@ -305,28 +330,24 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.println("\n--- Edit Internship Details ---");
 
         List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships to edit.");
             return;
         }
 
         // Show internships
-        handleViewMyInternships();
+        displayInternshipList(myInternships);
 
-        int number = promptForNumber();
+        int number = promptForInternshipNumber(myInternships.size());
         if (number == -1) return;
 
-        // Re-fetch to ensure up-to-date selection
-        List<Internship> refreshed = companyRepController.viewMyInternships(companyRep.getCompanyName());
-        if (number < 1 || number > refreshed.size()) {
-            System.out.println("Invalid internship selection.");
-            return;
-        }
+        Internship selected = myInternships.get(number - 1);
 
-        Internship selected = refreshed.get(number - 1);
+        // Deny edits unless internship is still pending
         String status = selected.getStatus();
-        if (status == null || status.toLowerCase().contains("approved")) {
-            System.err.println("Cannot Edit: Internship has already been approved.");
+        if (status != null && !status.toLowerCase().contains("pending")) {
+            System.err.println("Cannot edit internship unless it is pending.");
             return;
         }
 
@@ -335,6 +356,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.print("Title (current: " + (selected.getTitle() == null ? "" : selected.getTitle()) + "): ");
         String title = scanner.nextLine();
         if (title.equals("0")) { System.out.println("Cancelled."); return; }
+        if (title.isEmpty()) title = null;
 
         System.out.print("Description (current: " + (selected.getDescription() == null ? "" : selected.getDescription()) + "): ");
         String description = scanner.nextLine();
@@ -355,12 +377,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         String closingDate = promptForDate("Closing Date (YYYY-MM-DD) (current: " + selected.getClosingDate() +"): ", selected.getClosingDate().toString());
         if (closingDate == null) { System.out.println("Cancelled."); return; }
 
-        String slots = String.valueOf(promptForSlots(selected.getNumberOfSlots()));
-        if (slots.equals("-1")) { System.out.println("Cancelled."); return; }
+        int slots = promptForSlots(String.valueOf(selected.getNumberOfSlots()));
+        if (slots == -1) { System.out.println("Cancelled."); return; }
 
         boolean success = companyRepController.editInternship(
-                companyRep.getCompanyName(),
-                number,
+                selected.getUUID().toString(),
                 title,
                 description,
                 level,
@@ -381,46 +402,34 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
 
-        handleViewMyInternships();
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
 
-        int number = promptForNumber();
+        if (myInternships.isEmpty()) {
+            System.out.println("You have no internships to delete.");
+            return;
+        }
+
+        // Show internships
+        displayInternshipList(myInternships);
+
+        int number = promptForInternshipNumber(myInternships.size());
         if (number == -1) return;
 
-        boolean success = companyRepController.deleteInternship(companyRep.getCompanyName(), number);
+        Internship selected = myInternships.get(number - 1);
+
+        boolean success = companyRepController.deleteInternship(selected.getUUID().toString());
+
         if (success) {
             handleViewMyInternships();
             System.out.println("Internship deleted successfully.");
         } else {
-            System.err.println("Please try again.\n");
+            System.err.println("Failed to delete internship. Please try again.");
         }
     }
 
     private void handleViewMyInternships() {
         List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
-
-        if (myInternships.isEmpty()) {
-            System.out.println("\n--- No internships found for " + companyRep.getCompanyName() + " ---");
-            return;
-        }
-        System.out.println("\n--- My Internships ---");
-        // 2. Iterate and print the details
-        int index = 1;
-        for (Internship internship : myInternships) {
-            // Custom output formatting
-            System.out.println("\n--- Internship #" + index++ + " ---");
-            System.out.println("UUID: " + internship.getUUID());
-            System.out.println("Title: " + internship.getTitle());
-            System.out.println("Description: " + internship.getDescription());
-            System.out.println("Preferred Major: " + internship.getPreferredMajor());
-            System.out.println("Level: " + internship.getLevel());
-            System.out.println("Slots: " + internship.getNumberOfSlots());
-            System.out.println("Application Period: " + internship.getOpeningDate() + " -> " + internship.getClosingDate());
-            System.out.println("Status: " + internship.getStatus());
-            String visibilityDisplay = internship.isVisible() ? "ON" : "OFF";
-            System.out.println("Visibility: " + visibilityDisplay);
-
-        System.out.println("\n==============================================");
-        }
+        displayInternshipList(myInternships);
     }
 
     private void handleViewApplications() {
@@ -478,22 +487,18 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.println("\n--- Manage Applications by Internship ---");
 
         List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships posted to manage applications for.");
             return;
         }
 
-        handleViewMyInternships();
+        displayInternshipList(myInternships);
 
-        int internshipNumber = promptForNumber();
-        if (internshipNumber == -1) return;
+        int number = promptForInternshipNumber(myInternships.size());
+        if (number == -1) return;
 
-        if (internshipNumber < 1 || internshipNumber > myInternships.size()) {
-            System.out.println("Invalid internship selection.");
-            return;
-        }
-
-        Internship selectedInternship = myInternships.get(internshipNumber - 1);
+        Internship selectedInternship = myInternships.get(number - 1);
         String internshipUUID = selectedInternship.getUUID().toString();
 
         Map<String, List<Application>> applicationsByInternship =
@@ -553,28 +558,20 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
 
-        List<Internship> internshipList = companyRepController.viewMyInternships(companyRep.getCompanyName());
-        if (internshipList.isEmpty()) {
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+
+        if (myInternships.isEmpty()) {
             System.out.println("You have no internships.");
             return;
         }
 
         // Show internships to the user
-        handleViewMyInternships();
+        displayInternshipList(myInternships);
 
-        int number = promptForNumber();
-        if (number == -1) {
-            return; // User cancelled
-        }
+        int number = promptForInternshipNumber(myInternships.size());
+        if (number == -1) return;
 
-        // Re-fetch to ensure we have up-to-date data and a matching index
-        List<Internship> refreshedList = companyRepController.viewMyInternships(companyRep.getCompanyName());
-        if (number < 1 || number > refreshedList.size()) {
-            System.out.print("Invalid internship selection.");
-            return;
-        }
-
-        Internship selected = refreshedList.get(number - 1);
+        Internship selected = myInternships.get(number - 1);
         String status = selected.getStatus();
 
         // Only allow toggling if the internship is approved
@@ -584,11 +581,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
 
         int option = promptForOption();
-        if (option == -1) {
-            return; // User cancelled
-        }
+        if (option == -1) return;
 
-        boolean success = companyRepController.toggleInternshipVisibility(companyRep.getCompanyName(), number, option);
+        boolean success = companyRepController.toggleInternshipVisibility(selected.getUUID().toString(), option);
+
         if (success) {
             handleViewMyInternships();
             System.out.println("Internship visibility updated successfully.");
