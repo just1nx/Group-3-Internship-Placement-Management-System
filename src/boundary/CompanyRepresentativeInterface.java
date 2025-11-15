@@ -133,7 +133,6 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             } else {
                 System.out.print("Number of Slots (1-10) (current: " + current + " ): ");
             }
-            System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
             String slotInput = scanner.nextLine();
 
             if (slotInput.isEmpty() && current != null) {

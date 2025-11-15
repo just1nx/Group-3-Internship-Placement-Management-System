@@ -3,6 +3,7 @@ package boundary;
 import control.StudentController;
 import entity.Student;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class StudentInterface implements CommandLineInterface {
@@ -17,6 +18,23 @@ public class StudentInterface implements CommandLineInterface {
     @Override
     public void display() {
         boolean running = true;
+        //check for notifications, if there are updates on withdrawal request or application status, should return a list of strings to display
+        List<String> notifications = studentController.checkNotifications(student);
+
+        if (!notifications.isEmpty()) {
+            System.out.println("\n--- Notifications ---");
+            int notificationCount = 1; // Initialize counter
+            for (String notification : notifications) {
+                System.out.println(notificationCount + ". " + notification); // Print with number and dot
+                notificationCount++; // Increment counter
+            }
+            System.out.println("---------------------\n");
+
+            //student must acknowledge before proceeding
+            System.out.print("Press Enter to acknowledge");
+            scanner.nextLine();
+        }
+
         while (running) {
             System.out.println("\n==========================================");
             System.out.println("Student Menu - Welcome, " + student.getName());
