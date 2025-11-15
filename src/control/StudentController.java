@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class StudentController {
+public class StudentController extends BaseController {
     private final Map<String, Internship> internships = new HashMap<>();
 
     // Define the path to the application and internship CSV file
@@ -55,26 +55,6 @@ public class StudentController {
         } catch (IOException e) {
             System.err.println("Failed to read internship CSV: " + e.getMessage());
         }
-    }
-
-    // Helper method to escape special characters for CSV format
-    private String escapeCSV(String s) {
-        if (s == null) s = "";
-        String out = s.replace("\"", "\"\"");
-        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\"";
-        }
-        return out;
-    }
-
-    // Helper method to unquote fields
-    private String unquote(String s) {
-        if (s == null) return "";
-        s = s.trim();
-        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
-            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
-        }
-        return s;
     }
 
     public List<Internship> getInternshipsForStudents() {

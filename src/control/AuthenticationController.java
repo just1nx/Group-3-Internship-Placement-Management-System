@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-public class AuthenticationController {
+public class AuthenticationController extends BaseController {
     private final Map<String, Student> students = new HashMap<>();
     private final Map<String, CompanyRepresentative> companyReps = new HashMap<>();
     private final Map<String, CareerCenterStaff> staff = new HashMap<>();
@@ -251,26 +251,5 @@ public class AuthenticationController {
             return false; // IO error occurred
         }
     }
-
-    // Helper method to escape special characters for CSV format
-    private String escapeCSV(String s) {
-        if (s == null) s = "";
-        String out = s.replace("\"", "\"\"");
-        if (out.contains(",") || out.contains("\"") || out.contains("\n") || out.contains("\r")) {
-            out = "\"" + out + "\"";
-        }
-        return out;
-    }
-
-    // Helper method to unquote fields
-    private String unquote(String s) {
-        if (s == null) return "";
-        s = s.trim();
-        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
-            s = s.substring(1, s.length() - 1).replace("\"\"", "\"");
-        }
-        return s;
-    }
-
     // TODO: Password hashing function
 }
