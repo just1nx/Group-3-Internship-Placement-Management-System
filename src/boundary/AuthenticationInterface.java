@@ -11,7 +11,7 @@ import java.util.Scanner;
 // This class represents the login interface of the application.
 public class AuthenticationInterface implements CommandLineInterface {
     private final Scanner scanner = new Scanner(System.in);
-    private final AuthenticationController authController = new AuthenticationController();
+    private AuthenticationController authController = new AuthenticationController();
 
     @Override
     public void display() {
@@ -145,14 +145,24 @@ public class AuthenticationInterface implements CommandLineInterface {
 
             studentMenu.display();
 
+            authController = new AuthenticationController();
+
         } else if (user instanceof CareerCenterStaff) {
             CommandLineInterface staffMenu = new CareerCenterStaffInterface((CareerCenterStaff) user);
 
+            System.out.println("Staff login successful!");
+
             staffMenu.display();
+
+            authController = new AuthenticationController();
         } else if (user instanceof CompanyRepresentative) {
             CommandLineInterface repMenu = new CompanyRepresentativeInterface((CompanyRepresentative) user);
 
+            System.out.println("Company representative login successful!");
+
             repMenu.display();
+
+            authController = new AuthenticationController();
         }
     }
 }
