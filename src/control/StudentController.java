@@ -5,15 +5,11 @@ import entity.Internship;
 import entity.Student;
 import entity.Withdrawal;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class StudentController extends BaseController {
     private final Map<String, Internship> internships;
@@ -33,193 +29,214 @@ public class StudentController extends BaseController {
         withdrawals = loadWithdrawals(withdrawalPath);
     }
 
-    public List<Internship> getInternshipsForStudents() {
-        List<Internship> safeList = new ArrayList<>();
-        for (Internship i : this.internships.values()){
-            boolean isApproved = "Approved".equalsIgnoreCase(i.getStatus());
-            boolean isVisible = i.isVisible();
+    public List<Internship> getAvailableInternships(Student student) {
+        String studentMajor = student.getMajor();
+        int studentYear = student.getYearOfStudy();
+        LocalDate today = LocalDate.now(); // Get the current date once
 
-            if (isApproved && isVisible) {
-                safeList.add(i);
-            }
-        }
-        return safeList;
+        return internships.values().stream()
+                .filter(Internship::isVisible) // Must be visible
+                .filter(i -> "Approved".equalsIgnoreCase(i.getStatus())) // Must be approved by staff
+
+                .filter(i -> !i.getClosingDate().isBefore(today)) // Must not be past closing date
+                .filter(i -> !hasAlreadyApplied(student, i)) // Student must not have applied
+
+                .filter(i -> i.getPreferredMajor() != null &&
+                        i.getPreferredMajor().equalsIgnoreCase(studentMajor)) // Major must match
+                .filter(i -> {
+                    // Filter by level based on student year
+                    String level = i.getLevel();
+                    if (studentYear <= 2) {
+                        // Year 1 & 2 can only apply for Basic
+                        return "Basic".equalsIgnoreCase(level);
+                    } else {
+                        // Year 3+ can apply for any level
+                        return true;
+                    }
+                })
+                .sorted(Comparator.comparing(Internship::getTitle, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
     }
 
-    public int getApplicationCount(String studentID){
-        if (!Files.exists(applicationPath)) {
-            return 0; // File doesn't exist yet, so count is 0
-        }
-
-        try (Stream<String> lines = Files.lines(applicationPath)) {
-            int result = (int) lines.skip(1)
-                    .map(line -> line.split(",", -1))
-                    .filter(cols -> cols.length > 1)
-                    .filter(cols -> cols.length > 1 && cols[1].trim().replace("\"", "").equals(studentID))
-                    .count(); // Count the number of matching lines
-
-            return result;
-        }  catch (IOException e) {
-            System.err.println("Error counting applications: " + e.getMessage());
-            return maxApplication;
-        }
-    }
-
-    public List<Internship> getFilteredInternships(Student currentStudent){
-        List<Internship> matches = new ArrayList<>();
-        List<Internship> availableInternships = getInternshipsForStudents();
-        String studentMajor = currentStudent.getMajor();
-        int studentYear = currentStudent.getYearOfStudy();
-        String uStudentYear;
-        int count;
-
-        if (studentYear > 0 && studentYear < 3){
-            uStudentYear = "Basic";
-            count = 0 ;
-        }
-        else {
-            uStudentYear = "Advanced";
-            count = 1;
-        }
-
-        for(Internship internship : availableInternships ){
-
-            String jobMajor = internship.getPreferredMajor();
-            boolean majorMatch = jobMajor.equalsIgnoreCase(studentMajor);
-            boolean yearMatch;
-            String jobLevel = internship.getLevel();
-
-            if (count == 0){
-
-                yearMatch = jobLevel.equalsIgnoreCase(uStudentYear);
-            }
-            else{
-                yearMatch = true;
-            }
-
-            if (majorMatch && yearMatch){
-                matches.add(internship);
-            }
-        }
-
-        return matches;
-    }
-
-    public void applyForInternship(Student currentStudent){
-        Scanner sc = new Scanner(System.in);
-        int count = getApplicationCount(currentStudent.getUserID());
-
-        if (count >= 3){
-            System.out.println("You have already applied to " + count + " internships.");
-            System.out.println("You cannot apply for any more.");
-            return;
-        }
-
-        List<Internship> validInternships = getFilteredInternships(currentStudent);
-
-        List<Internship> finalValidInternships = internshipChecker(validInternships);
-
-        if (finalValidInternships.isEmpty()) {
-            System.out.println("No eligible internships found to apply for.");
-            return;
-        }
-
-        System.out.println("--- Select an Internship to Apply ---");
-        int index = 1;
-        for (Internship i : finalValidInternships) {
-            System.out.println(index + ". " + i.getTitle() + " at " + i.getCompanyName());
-            index++;
-        }
-        System.out.println("0. Cancel");
-
-        // Get User Input
-        System.out.print("Enter Ref #: ");
-        int choice = -1;
-        try {
-            choice = Integer.parseInt(sc.nextLine());
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input.");
-            return;
-        }
-
-        if (choice == 0) return;
-
-        if (choice > 0 && choice <= finalValidInternships.size()) {
-            // -1 because List index starts at 0, but display started at 1
-            Internship selectedInternship = finalValidInternships.get(choice - 1);
-
-            boolean success = submitApplication(currentStudent, selectedInternship);
-
-            if (success) {
-                System.out.println("Application submitted successfully for " + selectedInternship.getTitle());
-            } else {
-                System.out.println("Application failed. Please try again.");
-            }
-        } else {
-            System.out.println("Invalid Ref #.");
-        }
-    }
-
-    public boolean submitApplication(Student student, Internship internship) {
-        String appId = UUID.randomUUID().toString();
-        String status = "Pending"; // Default status
-        String date = LocalDate.now().toString();
-
-        // 3. Format CSV Line: Uuid,Userid,Name,Email,Major,Year,SubmittedDate,Status
-        String csvLine = String.join(",",
-                escapeCSV(internship.getUUID().toString()),
-                escapeCSV(student.getUserID()),
-                escapeCSV(student.getName()),
-                escapeCSV(student.getEmail()),
-                escapeCSV(student.getMajor()),
-                escapeCSV(String.valueOf(student.getYearOfStudy())),
-                escapeCSV(date),
-                escapeCSV(status)
-        );
-
-        // 4. Write to File
-        try {
-            // Create file/header if it doesn't exist
-            if (!Files.exists(applicationPath)) {
-                String header = "Uuid,Userid,Name,Email,Major,Year,SubmittedDate,Status";
-                Files.write(applicationPath, Collections.singletonList(header), StandardOpenOption.CREATE);
-            }
-
-            // Append the new application
-            Files.write(applicationPath, Collections.singletonList(csvLine),
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND
-
-            );
-            return true;
-
-        } catch (IOException e) {
-            System.err.println("Error saving application: " + e.getMessage());
+    public boolean hasAlreadyApplied(Student student, Internship internship) {
+        List<Application> appList = applications.get(internship.getUUID().toString());
+        if (appList == null) {
             return false;
         }
+        return appList.stream().anyMatch(app -> app.getUserId().equals(student.getUserID()));
     }
 
-    public List<Internship>internshipChecker(List<Internship> validInternships){
-        List<Internship> internList = new ArrayList<>();
+    public boolean canApply(Student student) {
+        // Get all applications for the student
+        List<Application> allMyApps = applications.values().stream()
+                .flatMap(List::stream)
+                .filter(app -> app.getUserId().equals(student.getUserID()))
+                .collect(Collectors.toList());
 
-        for(Internship i : validInternships){
+        // Check if they have already accepted an offer
+        boolean hasAccepted = allMyApps.stream()
+                .anyMatch(app -> "Accepted".equalsIgnoreCase(app.getStatus()));
 
-            try (Stream<String> lines = Files.lines(applicationPath)) {
-                boolean result = lines.skip(1)
-                        .map(line -> line.split(",", -1))
-                        .filter(cols -> cols.length > 0)
-                        .anyMatch(cols -> cols[0].trim().replace("\"", "").equals(i.getUUID().toString()));
+        if (hasAccepted) {
+            return false; // Cannot apply if one is accepted
+        }
 
+        // Check if they are at the 3-application limit (only count active ones)
+        long activeAppCount = allMyApps.stream()
+                .filter(app -> "Pending".equalsIgnoreCase(app.getStatus()) ||
+                        "Successful".equalsIgnoreCase(app.getStatus()))
+                .count();
 
-                if (result == false){
-                    internList.add(i);
-                }
-            } catch (IOException e) {
-                System.err.println("Error reading application file: " + e.getMessage());
-                return internList;
+        return activeAppCount < maxApplication;
+    }
+
+    public boolean applyForInternship(Student student, Internship internship) {
+        // Create new Application object
+        String status = "Pending"; // Default status
+        String date = LocalDate.now().toString();
+        Application application = new Application(
+                internship.getUUID(),
+                status,
+                date,
+                student.getUserID(),
+                student.getName(),
+                student.getEmail(),
+                student.getMajor(),
+                student.getYearOfStudy()
+        );
+
+        // Add to the in-memory map
+        String internshipId = internship.getUUID().toString();
+        applications.putIfAbsent(internshipId, new ArrayList<>());
+        applications.get(internshipId).add(application);
+
+        // Save changes to CSV
+        return rewriteApplicationCSV(applicationPath, applications);
+    }
+
+    public Map<Application, Internship> getMyApplications(Student student) {
+        Map<Application, Internship> myApps = new HashMap<>();
+        String studentId = student.getUserID();
+
+        // Flatten the map of lists into a single stream of all applications
+        applications.values().stream()
+                .flatMap(List::stream) // Stream<Application>
+                .filter(app -> studentId.equals(app.getUserId()))
+                .forEach(app -> {
+                    // For each of an student's applications, find the matching internship
+                    Internship internship = internships.get(app.getUUID().toString());
+                    if (internship != null) {
+                        myApps.put(app, internship);
+                    }
+                });
+        return myApps;
+    }
+
+    public boolean acceptOffer(Student student, Application appToAccept) {
+        // Check if student has already accepted another offer
+        boolean alreadyAccepted = getMyApplications(student).keySet().stream()
+                .anyMatch(app -> "Accepted".equalsIgnoreCase(app.getStatus()));
+
+        if (alreadyAccepted) {
+            return false; // Cannot accept more than one
+        }
+
+        // Set the chosen application to "Accepted"
+        appToAccept.setStatus("Accepted");
+
+        // Remove all other "Pending" or "Successful" applications
+        // Iterate over each list in the map's values
+        for (List<Application> appList : applications.values()) {
+            // Use removeIf to safely find and remove matching applications
+            appList.removeIf(app ->
+                    app.getUserId().equals(student.getUserID()) && // Belongs to this student
+                            !app.getUUID().equals(appToAccept.getUUID()) && // NOT the one they accepted
+                            ("Pending".equalsIgnoreCase(app.getStatus()) || "Successful".equalsIgnoreCase(app.getStatus()))
+            );
+        }
+
+        // Remove all pending withdrawal requests for this student
+        boolean withdrawalsChanged = false;
+        for (List<Withdrawal> wList : withdrawals.values()) {
+            // Remove any "Pending" withdrawal request submitted by this student
+            if (wList.removeIf(w -> w.getUserId().equals(student.getUserID()) && "Pending".equalsIgnoreCase(w.getStatus()))) {
+                withdrawalsChanged = true;
             }
         }
-        return internList;
+
+        // Update the Internship's slots and status
+        String acceptedInternshipId = appToAccept.getUUID().toString();
+        Internship acceptedInternship = internships.get(acceptedInternshipId);
+        boolean internshipChanged = false;
+
+        if (acceptedInternship != null) {
+            int currentSlots = acceptedInternship.getNumberOfSlots();
+            if (currentSlots > 0) {
+                acceptedInternship.setNumberOfSlots(currentSlots - 1);
+
+                // If slots are now 0, set status to "Filled"
+                if (acceptedInternship.getNumberOfSlots() == 0) {
+                    acceptedInternship.setStatus("Filled");
+                }
+                internshipChanged = true;
+            } else {
+                // This case (accepting an offer for an internship with 0 slots)
+                // shouldn't happen if logic is correct, but it's good to know.
+                System.err.println("Warning: Student accepted an offer for internship " +
+                        acceptedInternshipId + " which already had 0 slots.");
+                acceptedInternship.setStatus("Filled"); // Ensure it's filled
+                internshipChanged = true;
+            }
+        } else {
+            System.err.println("CRITICAL ERROR: Could not find internship " +
+                    acceptedInternshipId + " to update slots.");
+        }
+
+        // Save all changes to all relevant CSV files
+        boolean appSave = rewriteApplicationCSV(applicationPath, applications);
+        boolean wthSave = true;
+        boolean intSave = true;
+
+        if (withdrawalsChanged) {
+            wthSave = rewriteWithdrawalCSV(withdrawalPath, withdrawals);
+        }
+
+        if (internshipChanged) {
+            intSave = rewriteInternshipCSV(internshipPath, internships);
+        }
+
+        return appSave && wthSave && intSave;
+    }
+
+    public boolean requestWithdrawal(Application appToWithdraw) {
+        // Create a new Withdrawal object
+        Withdrawal withdrawal = new Withdrawal(
+                appToWithdraw.getUUID(),
+                "Pending", // Status is pending staff approval
+                LocalDate.now().toString(),
+                appToWithdraw.getUserId(),
+                appToWithdraw.getName(),
+                appToWithdraw.getEmail(),
+                appToWithdraw.getMajor(),
+                appToWithdraw.getYear()
+        );
+
+        // Add it to the withdrawals map
+        String internshipId = appToWithdraw.getUUID().toString();
+        withdrawals.putIfAbsent(internshipId, new ArrayList<>());
+        withdrawals.get(internshipId).add(withdrawal);
+
+        // Save the withdrawals file
+        return rewriteWithdrawalCSV(withdrawalPath, withdrawals);
+    }
+
+    public Set<String> getPendingWithdrawalRequests(Student student) {
+        return withdrawals.values().stream()
+                .flatMap(List::stream)
+                .filter(w -> w.getUserId().equals(student.getUserID()))
+                .filter(w -> "Pending".equalsIgnoreCase(w.getStatus()))
+                .map(w -> w.getUUID().toString()) // Get the Internship UUID
+                .collect(Collectors.toSet());
     }
 
     public List<String> checkNotifications(Student student) {
@@ -279,9 +296,9 @@ public class StudentController extends BaseController {
                     Internship internship = internships.get(internshipId);
                     String internshipTitle = (internship != null) ? internship.getTitle() : "[Unknown Internship]";
 
-                    if (status.equalsIgnoreCase("Approved")) {
+                    if (status.equalsIgnoreCase("Successful")) {
                         notifications.add("Your application for Internship: " + internshipTitle + " has been approved.");
-                    } else if (status.equalsIgnoreCase("Rejected")) {
+                    } else if (status.equalsIgnoreCase("Unsuccessful")) {
                         notifications.add("Your application for Internship: " + internshipTitle + " has been rejected.");
                         // Mark the rejected application for removal
                         applicationsToRemove.add(new String[]{internshipId, studentID});

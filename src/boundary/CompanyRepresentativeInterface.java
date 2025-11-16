@@ -215,9 +215,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
             switch (choice) {
                 case "1":
-                    return "Approved";
+                    return "Successful";
                 case "2":
-                    return "Rejected";
+                    return "Unsuccessful";
                 case "0":
                     System.out.println("Cancelled status change.");
                     return null;
