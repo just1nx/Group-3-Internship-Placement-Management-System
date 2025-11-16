@@ -1,6 +1,7 @@
 package control;
 
 import entity.Application;
+import entity.CompanyRepresentative;
 import entity.Internship;
 
 import java.nio.file.Path;
@@ -215,5 +216,52 @@ public class CompanyRepresentativeController extends BaseController {
             System.err.println("Error: Matching application not found for student " + studentUserId);
             return false;
         }
+    }
+
+    // src/control/CompanyRepresentativeController.java
+    public List<String> checkNotifications(CompanyRepresentative companyRep) {
+        List<String> notifications = new ArrayList<>();
+        String companyName = companyRep.getCompanyName();
+        if (companyName == null || companyName.trim().isEmpty()) {
+            return notifications;
+        }
+        String target = companyName.trim();
+
+        // Collect removals to avoid modifying the map during iteration
+        List<String> toRemove = new ArrayList<>();
+
+        for (Internship internship : internships.values()) {
+            if (internship.getCompanyName() != null &&
+                    internship.getCompanyName().trim().equalsIgnoreCase(target)) {
+                String status = internship.getStatus();
+                if (status != null && status.equalsIgnoreCase("Rejected")) {
+                    String message = "Your Internship: '" + internship.getTitle() + "' has been rejected.";
+                    notifications.add(message);
+                    toRemove.add(internship.getUUID().toString());
+                }
+            }
+        }
+
+        // Apply removals after iteration
+        for (String internshipId : toRemove) {
+            if (!removeInternshipInternal(internshipId)) {
+                System.err.println("Failed to remove internship with ID: " + internshipId);
+            }
+        }
+
+        return notifications;
+    }
+
+    private boolean removeInternshipInternal(String internshipUUID) {
+        if (internshipUUID == null || internshipUUID.trim().isEmpty()) {
+            System.err.println("Error: Invalid internship UUID.");
+            return false;
+        }
+
+        // Remove applications from the in-memory map
+        internships.remove(internshipUUID);
+
+        // Rewrite the application CSV
+        return rewriteInternshipCSV(internshipPath, internships);
     }
 }

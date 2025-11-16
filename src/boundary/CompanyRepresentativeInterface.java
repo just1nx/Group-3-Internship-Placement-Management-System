@@ -22,6 +22,21 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     @Override
     public void display() {
         boolean running = true;
+        List<String> notifications = companyRepController.checkNotifications(companyRep);
+
+        if (!notifications.isEmpty()) {
+            System.out.println("\n---You have " + notifications.size() + " notification(s)");
+            int notificationCount = 1; // Initialize counter
+            for (String notification : notifications) {
+                System.out.println(notificationCount + ". " + notification); // Print with number and dot
+                notificationCount++; // Increment counter
+            }
+            System.out.println("---------------------\n");
+
+            //student must acknowledge before proceeding
+            System.out.print("Press Enter to acknowledge");
+            scanner.nextLine();
+        }
         while (running) {
             System.out.println("\n=========================================================");
             System.out.println("Company Representative Menu - Welcome, " + companyRep.getName() + ", " + companyRep.getCompanyName());

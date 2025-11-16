@@ -268,12 +268,12 @@ public class StudentController extends BaseController {
                     String internshipTitle = (internship != null) ? internship.getTitle() : "[Unknown Internship]";
 
                     if (status.equalsIgnoreCase("Approved")) {
-                        notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been approved.");
+                        notifications.add("Your withdrawal request for Internship: '" + internshipTitle + "' has been approved.");
                         // Mark both the withdrawal and the original application for removal
                         applicationsToRemove.add(new String[]{internshipId, studentID});
                         withdrawalsToRemove.add(new String[]{internshipId, studentID});
                     } else if (status.equalsIgnoreCase("Rejected")) {
-                        notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been rejected. Your original application status is restored.");
+                        notifications.add("Your withdrawal request for Internship: '" + internshipTitle + "' has been rejected. Your original application status is restored.");
                         // Mark only the withdrawal request for removal
                         withdrawalsToRemove.add(new String[]{internshipId, studentID});
                     }
