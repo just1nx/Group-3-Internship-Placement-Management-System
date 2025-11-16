@@ -1,5 +1,6 @@
 package control;
 
+import entity.Application;
 import entity.CompanyRepresentative;
 import entity.Internship;
 import entity.Withdrawal;
@@ -14,15 +15,18 @@ public class CareerCenterStaffController extends BaseController {
     private final Map<String, CompanyRepresentative> companyReps;
     private final Map<String, Internship> internships;
     private final Map<String, List<Withdrawal>> withdrawals;
+    private final Map<String, List<Application>> applications;
     // Define the paths to the data files
     private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
     private static final Path withdrawalPath  = Paths.get("data/sample_withdrawal_list.csv");
+    private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
 
     public CareerCenterStaffController() {
         companyReps = loadCompanyReps(companyRepPath);
         internships = loadInternships(internshipPath);
         withdrawals = loadWithdrawals(withdrawalPath);
+        applications = loadApplications(applicationPath);
     }
 
     // Public Methods for Company Rep Management
@@ -97,9 +101,79 @@ public class CareerCenterStaffController extends BaseController {
         return false; // Withdrawal not found
     }
 
-    public void generateReport() {
-        System.out.println("... (To be implemented: Logic to generate reports) ...");
-        // This will involve loading internships and filtering them
+    public String generateReportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("========================================\n");
+        sb.append("   Internship Placement System Report   \n");
+        sb.append("========================================\n");
+
+        // --- 1. System-Wide Summary ---
+        long totalApprovedCompanies = companyReps.values().stream()
+                .filter(r -> "Approved".equalsIgnoreCase(r.getStatus()))
+                .count();
+
+        long totalInternships = internships.size();
+
+        // Group internships by status
+        Map<String, Long> internshipsByStatus = internships.values().stream()
+                .collect(Collectors.groupingBy(
+                        i -> i.getStatus() != null ? i.getStatus() : "Unknown",
+                        Collectors.counting()
+                ));
+
+        // Get total application and withdrawal counts
+        long totalApplications = applications.values().stream()
+                .mapToLong(List::size)
+                .sum();
+
+        long totalWithdrawals = withdrawals.values().stream()
+                .mapToLong(List::size)
+                .sum();
+
+        sb.append("\n--- System-Wide Summary ---\n");
+        sb.append(String.format("Total Approved Companies: %d\n", totalApprovedCompanies));
+        sb.append(String.format("Total Internships:        %d\n", totalInternships));
+        internshipsByStatus.forEach((status, count) ->
+                sb.append(String.format("  - %s: %d\n", status, count))
+        );
+        sb.append(String.format("Total Applications:       %d\n", totalApplications));
+        sb.append(String.format("Total Withdrawal Requests: %d\n", totalWithdrawals));
+
+        // --- 2. Per-Internship Breakdown ---
+        sb.append("\n\n--- Per-Internship Breakdown ---\n");
+        if (internships.isEmpty()) {
+            sb.append("No internships found in the system.\n");
+        }
+
+        // Sort internships by title for a clean report
+        List<Internship> sortedInternships = internships.values().stream()
+                .sorted(Comparator.comparing(Internship::getTitle, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+
+        for (Internship internship : sortedInternships) {
+            String id = internship.getUUID().toString();
+
+            // Get app count for this internship
+            List<Application> appsForThis = applications.getOrDefault(id, Collections.emptyList());
+            int appCount = appsForThis.size();
+
+            // Get withdrawal count for this internship
+            List<Withdrawal> withdrawalsForThis = withdrawals.getOrDefault(id, Collections.emptyList());
+            int withdrawalCount = withdrawalsForThis.size();
+
+            // Calculate percentage of all applications
+            double percentage = (totalApplications == 0) ? 0.0 : ((double) appCount / totalApplications) * 100.0;
+
+            sb.append("\n----------------------------------------\n");
+            sb.append(String.format("Internship: %s\n", internship.getTitle()));
+            sb.append(String.format("Company:    %s\n", internship.getCompanyName()));
+            sb.append(String.format("Status:     %s\n", internship.getStatus()));
+            sb.append(String.format("  - Applications Received: %d\n", appCount));
+            sb.append(String.format("  - Withdrawal Requests:   %d\n", withdrawalCount));
+            sb.append(String.format("  - %% of Total System Apps: %.1f%%\n", percentage));
+        }
+
+        return sb.toString();
     }
 
     public List<Internship> viewAllInternships(List<String> statusFilters, List<String> levelFilters,

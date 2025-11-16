@@ -311,16 +311,19 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         }
     }
 
-    /**
-     * Placeholder method to generate comprehensive reports.
-     * This will call your CareerCenterStaffController.
-     */
     private void handleGenerateReports() {
-        System.out.println("\n--- Generate Internship Reports ---");
-        // 1. Prompt staff for filters (by Status, Major, Company, etc.).
-        // 2. Call staffController.generateReport(filters)
-        // 3. Display the generated report (e.g., list of internships or summary statistics).
-        System.out.println("... (To be implemented: Report generation with filters) ...");
+        System.out.println("\n--- Generating Internship Reports ---");
+
+        // Call controller to get the report string
+        String report = staffController.generateReportString();
+
+        // Display the generated report
+        System.out.println(report);
+
+        // Pause for user to read
+        System.out.println("========================================");
+        System.out.print("\nPress Enter to return to the menu...");
+        scanner.nextLine();
     }
 
     private void manageFilterList(String filterName, List<String> filterList) {
