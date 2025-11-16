@@ -3,19 +3,15 @@ package control;
 import entity.Application;
 import entity.Internship;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CompanyRepresentativeController extends BaseController {
-    private final Map<String, Internship> internships = new HashMap<>();
-    private final Map<String, List<Application>> applicationsByInternshipId = new HashMap<>();
+    private final Map<String, Internship> internships;
+    private final Map<String, List<Application>> applications;
 
     // Define the path to the internship and application CSV file
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
@@ -25,138 +21,8 @@ public class CompanyRepresentativeController extends BaseController {
     private static final int maxInternships = 5;
 
     public CompanyRepresentativeController() {
-        loadInternships(internshipPath);
-        loadApplications(applicationPath);
-    }
-
-    private void loadInternships(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("Internship CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 12)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String title = unquote(cols[1]);
-                        String description = unquote(cols[2]);
-                        String level = unquote(cols[3]);
-                        String preferredMajor = unquote(cols[4]);
-                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
-                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
-                        String status = unquote(cols[7]);
-                        String companyName = unquote(cols[8]);
-                        String representatives = unquote(cols[9]);
-                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
-                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
-
-                        Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
-                        internships.put(id, internship);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read internship CSV: " + e.getMessage());
-        }
-    }
-
-    private void loadApplications(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("Application CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 8) // Must have 8 columns
-                    .forEach(cols -> {
-                        // This is the Internship's UUID, used as the key for the map
-                        String internshipId = unquote(cols[0]);
-                        UUID appUuid = UUID.fromString(internshipId);
-
-                        String userId = unquote(cols[1]);
-                        String name = unquote(cols[2]);
-                        String email = unquote(cols[3]);
-                        String major = unquote(cols[4]);
-                        int year = Integer.parseInt(unquote(cols[5]));
-                        String submittedDate = unquote(cols[6]);
-                        String status = unquote(cols[7]);
-
-                        Application app = new Application(appUuid, status, submittedDate, userId, name, email, major, year);
-
-                        // Add it to the map, grouped by its Internship ID
-                        applicationsByInternshipId.putIfAbsent(internshipId, new ArrayList<>());
-                        applicationsByInternshipId.get(internshipId).add(app);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read applications CSV: " + e.getMessage());
-        }
-    }
-
-    private boolean rewriteInternshipCSV() {
-        List<String> lines = new ArrayList<>();
-        // Add header
-        lines.add("UUID,Title,Description,Level,PreferredMajor,OpeningDate,ClosingDate,Status,CompanyName,Representatives,NumberOfSlots,Visibility");
-
-        // Add data lines from in-memory map
-        for (Internship internship : internships.values()) {
-            lines.add(String.join(",",
-                    escapeCSV(internship.getUUID().toString()),
-                    escapeCSV(internship.getTitle()),
-                    escapeCSV(internship.getDescription()),
-                    escapeCSV(internship.getLevel()),
-                    escapeCSV(internship.getPreferredMajor()),
-                    escapeCSV(internship.getOpeningDate().toString()),
-                    escapeCSV(internship.getClosingDate().toString()),
-                    escapeCSV(internship.getStatus()),
-                    escapeCSV(internship.getCompanyName()),
-                    escapeCSV(internship.getRepresentatives()),
-                    escapeCSV(String.valueOf(internship.getNumberOfSlots())),
-                    escapeCSV(String.valueOf(internship.isVisible())) // "true" or "false"
-            ));
-        }
-
-        // Write to file, overwriting existing content
-        try {
-            Files.write(internshipPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            System.err.println("Failed to rewrite internship CSV: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean rewriteApplicationCSV() {
-        List<String> lines = new ArrayList<>();
-        // Add header
-        lines.add("UUID,UserId,Name,Email,Major,Year,SubmittedDate,Status");
-
-        // Add data lines from in-memory map
-        for (Map.Entry<String, List<Application>> entry : applicationsByInternshipId.entrySet()) {
-            for (Application app : entry.getValue()) {
-                lines.add(String.join(",",
-                        escapeCSV(app.getUUID().toString()), // 0: UUID (which is the InternshipUUID)
-                        escapeCSV(app.getUserId()),          // 1: UserId
-                        escapeCSV(app.getName()),            // 2: Name
-                        escapeCSV(app.getEmail()),           // 3: Email
-                        escapeCSV(app.getMajor()),           // 4: Major
-                        escapeCSV(String.valueOf(app.getYear())), // 5: Year
-                        escapeCSV(app.getSubmittedDate()),     // 6: SubmittedDate
-                        escapeCSV(app.getStatus())             // 7: Status
-                ));
-            }
-        }
-
-        // Write to file, overwriting existing content
-        try {
-            Files.write(applicationPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            System.err.println("Failed to rewrite application CSV: " + e.getMessage());
-            return false;
-        }
+        internships = loadInternships(internshipPath);
+        applications = loadApplications(applicationPath);
     }
 
     public boolean canCreateMoreInternships(String companyName) {
@@ -221,7 +87,7 @@ public class CompanyRepresentativeController extends BaseController {
         internships.put(uuid.toString(), newInternship);
 
         // 4. Rewrite the entire CSV file with the new data
-        return rewriteInternshipCSV();
+        return rewriteInternshipCSV(internshipPath, internships);
     }
 
     public boolean editInternship(
@@ -258,7 +124,7 @@ public class CompanyRepresentativeController extends BaseController {
         }
 
         // Rewrite the entire CSV
-        return rewriteInternshipCSV();
+        return rewriteInternshipCSV(internshipPath, internships);
     }
 
     public boolean deleteInternship(String internshipUUID) {
@@ -275,7 +141,7 @@ public class CompanyRepresentativeController extends BaseController {
         internships.remove(internship.getUUID().toString());
 
         // Rewrite the CSV
-        return rewriteInternshipCSV();
+        return rewriteInternshipCSV(internshipPath, internships);
     }
 
     public boolean toggleInternshipVisibility(String internshipUUID, int option) {
@@ -294,7 +160,7 @@ public class CompanyRepresentativeController extends BaseController {
         internship.setVisibility(newVisibility);
 
         // Rewrite the CSV
-        return rewriteInternshipCSV();
+        return rewriteInternshipCSV(internshipPath, internships);
     }
 
     public Map<String, List<Application>> getInternshipsWithApplications(String companyName) {
@@ -312,7 +178,7 @@ public class CompanyRepresentativeController extends BaseController {
         Map<String, List<Application>> results = new HashMap<>();
         for (String internshipId : companyInternshipIds) {
             // Get the list of applications for this internship, or an empty list if none
-            List<Application> appsForThisInternship = applicationsByInternshipId.getOrDefault(internshipId, new ArrayList<>());
+            List<Application> appsForThisInternship = applications.getOrDefault(internshipId, new ArrayList<>());
             results.put(internshipId, appsForThisInternship);
         }
 
@@ -326,7 +192,7 @@ public class CompanyRepresentativeController extends BaseController {
         }
 
         // 1. Find the application list for this internship
-        List<Application> appList = applicationsByInternshipId.get(internshipUUID);
+        List<Application> appList = applications.get(internshipUUID);
         if (appList == null) {
             System.err.println("Error: No applications found for internship " + internshipUUID);
             return false; // No applications for this internship
@@ -344,7 +210,7 @@ public class CompanyRepresentativeController extends BaseController {
 
         // 3. If an update was made, rewrite the entire application CSV
         if (updated) {
-            return rewriteApplicationCSV();
+            return rewriteApplicationCSV(applicationPath, applications);
         } else {
             System.err.println("Error: Matching application not found for student " + studentUserId);
             return false;

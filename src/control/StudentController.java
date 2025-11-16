@@ -15,9 +15,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class StudentController extends BaseController {
-    private final Map<String, Internship> internships = new HashMap<>();
-    private final Map<String, Application> applications = new HashMap<>();
-    private final Map<String, Withdrawal> withdrawals = new HashMap<>();
+    private final Map<String, Internship> internships;
+    private final Map<String, List<Application>> applications;
+    private final Map<String, List<Withdrawal>> withdrawals;
 
     // Define the path to the application and internship CSV file
     private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
@@ -27,97 +27,9 @@ public class StudentController extends BaseController {
     private static final int maxApplication = 3;
 
     public StudentController(){
-        loadInternships(internshipPath);
-        loadApplications(applicationPath);
-        loadWithdrawals(withdrawalPath);
-    }
-
-    private void loadInternships(Path csvPath) {
-        if (!Files.exists(internshipPath)) {
-            System.err.println("Internship CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 12)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String title = unquote(cols[1]);
-                        String description = unquote(cols[2]);
-                        String level = unquote(cols[3]);
-                        String preferredMajor = unquote(cols[4]);
-                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
-                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
-                        String status = unquote(cols[7]);
-                        String companyName = unquote(cols[8]);
-                        String representatives = unquote(cols[9]);
-                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
-                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
-
-                        Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
-                        internships.put(id, internship);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read internship CSV: " + e.getMessage());
-        }
-    }
-
-    private void loadApplications(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 8)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String userId = unquote(cols[1]);
-                        String name = unquote(cols[2]);
-                        String email = unquote(cols[3]);
-                        String major = unquote(cols[4]);
-                        int year = Integer.parseInt(unquote(cols[5]));
-                        String submittedDate = unquote(cols[6]);
-                        String status = unquote(cols[7]);
-
-                        Application application = new Application(UUID.fromString(id), status, submittedDate, userId, name, email, major, year);
-                        applications.put(id, application);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read application CSV: " + e.getMessage());
-        }
-    }
-
-    private void loadWithdrawals(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 8)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String userId = unquote(cols[1]);
-                        String name = unquote(cols[2]);
-                        String email = unquote(cols[3]);
-                        String major = unquote(cols[4]);
-                        int year = Integer.parseInt(unquote(cols[5]));
-                        String submittedDate = unquote(cols[6]);
-                        String status = unquote(cols[7]);
-
-                        Withdrawal withdrawal = new Withdrawal(UUID.fromString(id), status, submittedDate, userId, name, email, major, year);
-                        withdrawals.put(id, withdrawal);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read withdrawal CSV: " + e.getMessage());
-        }
+        internships = loadInternships(internshipPath);
+        applications = loadApplications(applicationPath);
+        withdrawals = loadWithdrawals(withdrawalPath);
     }
 
     public List<Internship> getInternshipsForStudents() {
@@ -454,5 +366,3 @@ public class StudentController extends BaseController {
         }
     }
 }
-
-

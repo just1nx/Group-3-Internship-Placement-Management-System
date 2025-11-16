@@ -4,219 +4,30 @@ import entity.CompanyRepresentative;
 import entity.Internship;
 import entity.Withdrawal;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CareerCenterStaffController extends BaseController {
-    private final List<CompanyRepresentative> companyReps =  new ArrayList<>();
-    private final List<Internship> internships = new ArrayList<>();
-    private final List<Withdrawal> withdrawals = new ArrayList<>();
+    private final Map<String, CompanyRepresentative> companyReps;
+    private final Map<String, Internship> internships;
+    private final Map<String, List<Withdrawal>> withdrawals;
     // Define the paths to the data files
     private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
     private static final Path withdrawalPath  = Paths.get("data/sample_withdrawal_list.csv");
 
     public CareerCenterStaffController() {
-        loadCompanyReps(companyRepPath);
-        loadInternships(internshipPath);
-        loadWithdrawals(withdrawalPath);
+        companyReps = loadCompanyReps(companyRepPath);
+        internships = loadInternships(internshipPath);
+        withdrawals = loadWithdrawals(withdrawalPath);
     }
-
-    // --- Private Helper Methods to Load Data ---
-    private void loadCompanyReps(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("Company representatives CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 8)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String name = unquote(cols[1]);
-                        String companyName = unquote(cols[2]);
-                        String department = unquote(cols[3]);
-                        String position = unquote(cols[4]);
-                        String email = unquote(cols[5]);
-                        String status = unquote(cols[6]);
-                        String pw = unquote(cols[7]);
-                        pw = pw.isEmpty() ? "password" : pw;
-
-                        CompanyRepresentative companyRep = new CompanyRepresentative(id, name, pw, email, companyName, department, position, status);
-                        companyReps.add(companyRep);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read company representatives CSV: " + e.getMessage());
-        }
-    }
-
-    private void loadInternships(Path csvPath) {
-        if (!Files.exists(internshipPath)) {
-            System.err.println("Internship CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // Skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 12)
-                    .forEach(cols -> {
-                        String id = unquote(cols[0]);
-                        String title = unquote(cols[1]);
-                        String description = unquote(cols[2]);
-                        String level = unquote(cols[3]);
-                        String preferredMajor = unquote(cols[4]);
-                        LocalDate openingDate = LocalDate.parse(unquote(cols[5])); // Assumes valid format
-                        LocalDate closingDate = LocalDate.parse(unquote(cols[6])); // Assumes valid format
-                        String status = unquote(cols[7]);
-                        String companyName = unquote(cols[8]);
-                        String representatives = unquote(cols[9]);
-                        int numberOfSlots = Integer.parseInt(unquote(cols[10]));
-                        boolean visibility = Boolean.parseBoolean(unquote(cols[11]));
-
-                        Internship internship = new Internship(UUID.fromString(id), title, description, level, preferredMajor, openingDate, closingDate, status, companyName, representatives, numberOfSlots, visibility);
-                        internships.add(internship);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read internship CSV: " + e.getMessage());
-        }
-    }
-
-    private void loadWithdrawals(Path csvPath) {
-        if (!Files.exists(csvPath)) {
-            System.err.println("Withdrawal CSV not found: " + csvPath);
-            return;
-        }
-
-        try (Stream<String> lines = Files.lines(csvPath)) {
-            lines.skip(1) // skip header
-                    .map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .filter(cols -> cols.length == 8) // Must have 8 columns
-                    .forEach(cols -> {
-                        // This is the Internship's UUID
-                        String internshipId = unquote(cols[0]);
-                        UUID withUuid = UUID.fromString(internshipId);
-
-                        String userId = unquote(cols[1]);
-                        String name = unquote(cols[2]);
-                        String email = unquote(cols[3]);
-                        String major = unquote(cols[4]);
-                        int year = Integer.parseInt(unquote(cols[5]));
-                        String submittedDate = unquote(cols[6]);
-                        String status = unquote(cols[7]);
-
-                        Withdrawal withdrawal = new Withdrawal(withUuid, status, submittedDate, userId, name, email, major, year);
-                        withdrawals.add(withdrawal);
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to read withdrawal CSV: " + e.getMessage());
-        }
-    }
-
-    private boolean rewriteCompanyRepCSV() {
-        List<String> lines = new ArrayList<>();
-        // Add header
-        lines.add("CompanyRepID,Name,CompanyName,Department,Position,Email,Status,Password");
-
-        // Add data lines from in-memory list
-        for (CompanyRepresentative rep : companyReps) {
-            lines.add(String.join(",",
-                    escapeCSV(rep.getUserID()),
-                    escapeCSV(rep.getName()),
-                    escapeCSV(rep.getCompanyName()),
-                    escapeCSV(rep.getDepartment()),
-                    escapeCSV(rep.getPosition()),
-                    escapeCSV(rep.getEmail()),
-                    escapeCSV(rep.getStatus()),
-                    escapeCSV(rep.getPasswordHash())
-            ));
-        }
-
-        // Write to file, overwriting existing content
-        try {
-            Files.write(companyRepPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            System.err.println("Failed to rewrite company rep CSV: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean rewriteInternshipCSV() {
-        List<String> lines = new ArrayList<>();
-        // Add header
-        lines.add("UUID,Title,Description,Level,PreferredMajor,OpeningDate,ClosingDate,Status,CompanyName,Representatives,NumberOfSlots,Visibility");
-
-        // Add data lines from in-memory list
-        for (Internship internship : internships) {
-            lines.add(String.join(",",
-                    escapeCSV(internship.getUUID().toString()),
-                    escapeCSV(internship.getTitle()),
-                    escapeCSV(internship.getDescription()),
-                    escapeCSV(internship.getLevel()),
-                    escapeCSV(internship.getPreferredMajor()),
-                    escapeCSV(internship.getOpeningDate().toString()), // Format date to string
-                    escapeCSV(internship.getClosingDate().toString()), // Format date to string
-                    escapeCSV(internship.getStatus()),
-                    escapeCSV(internship.getCompanyName()),
-                    escapeCSV(internship.getRepresentatives()),
-                    escapeCSV(String.valueOf(internship.getNumberOfSlots())),
-                    escapeCSV(String.valueOf(internship.isVisible()).toUpperCase()) // Format boolean to string
-            ));
-        }
-
-        // Write to file, overwriting existing content
-        try {
-            Files.write(internshipPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            System.err.println("Failed to rewrite internship CSV: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean rewriteWithdrawalCSV() {
-        List<String> lines = new ArrayList<>();
-        // Add header
-        lines.add("UUID,UserId,Name,Email,Major,Year,SubmittedDate,Status");
-
-        // Add data lines from in-memory map
-        for (Withdrawal withdrawal : withdrawals) {
-            lines.add(String.join(",",
-                    escapeCSV(withdrawal.getUUID().toString()), // 0: UUID (which is the InternshipUUID)
-                    escapeCSV(withdrawal.getUserId()),          // 1: UserId
-                    escapeCSV(withdrawal.getName()),            // 2: Name
-                    escapeCSV(withdrawal.getEmail()),           // 3: Email
-                    escapeCSV(withdrawal.getMajor()),           // 4: Major
-                    escapeCSV(String.valueOf(withdrawal.getYear())), // 5: Year
-                    escapeCSV(withdrawal.getSubmittedDate()),     // 6: SubmittedDate
-                    escapeCSV(withdrawal.getStatus())             // 7: Status
-            ));
-        }
-
-        // Write to file, overwriting existing content
-        try {
-            Files.write(withdrawalPath, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            System.err.println("Failed to rewrite withdrawal CSV: " + e.getMessage());
-            return false;
-        }
-    }
-
 
     // Public Methods for Company Rep Management
     public List<CompanyRepresentative> getPendingRegistrations() {
-        return companyReps.stream()
+        return companyReps.values().stream()
                 .filter(rep -> rep.getStatus().equalsIgnoreCase("Pending"))
                 .collect(Collectors.toList());
     }
@@ -224,7 +35,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean approveRegistration(CompanyRepresentative repToApprove) {
         if (repToApprove != null) {
             repToApprove.setStatus("Approved");
-            return rewriteCompanyRepCSV(); // Write changes to file
+            return rewriteCompanyRepCSV(companyRepPath, companyReps); // Write changes to file
         }
         return false; // Rep not found
     }
@@ -232,7 +43,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean rejectRegistration(CompanyRepresentative repToReject) {
         if (repToReject != null) {
             repToReject.setStatus("Rejected");
-            return rewriteCompanyRepCSV(); // Write changes to file
+            return rewriteCompanyRepCSV(companyRepPath, companyReps); // Write changes to file
         }
         return false; // Rep not found
     }
@@ -240,7 +51,7 @@ public class CareerCenterStaffController extends BaseController {
 
     // Public Methods for Internship Management
     public List<Internship> getPendingInternships() {
-        return internships.stream()
+        return internships.values().stream()
                 .filter(internship -> internship.getStatus().equalsIgnoreCase("Pending"))
                 .collect(Collectors.toList());
     }
@@ -248,7 +59,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean approveInternship(Internship internshipToApprove) {
         if (internshipToApprove != null) {
             internshipToApprove.setStatus("Approved");
-            return rewriteInternshipCSV(); // Write changes to file
+            return rewriteInternshipCSV(internshipPath, internships); // Write changes to file
         }
         return false; // Internship not found
     }
@@ -256,7 +67,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean rejectInternship(Internship internshipToReject) {
         if (internshipToReject != null) {
             internshipToReject.setStatus("Rejected");
-            return rewriteInternshipCSV(); // Write changes to file
+            return rewriteInternshipCSV(internshipPath, internships); // Write changes to file
         }
         return false; // Internship not found
     }
@@ -264,7 +75,8 @@ public class CareerCenterStaffController extends BaseController {
 
     // Public Methods for Withdrawal Management
     public List<Withdrawal> getPendingWithdrawals() {
-        return withdrawals.stream()
+        return withdrawals.values().stream()
+                .flatMap(List::stream)
                 .filter(withdrawal -> withdrawal.getStatus().equalsIgnoreCase("Pending"))
                 .collect(Collectors.toList());
     }
@@ -272,7 +84,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean approveWithdrawal(Withdrawal withdrawalToApprove) {
         if (withdrawalToApprove != null) {
             withdrawalToApprove.setStatus("Approved");
-            return rewriteWithdrawalCSV(); // Write changes to file
+            return rewriteWithdrawalCSV(withdrawalPath, withdrawals); // Write changes to file
         }
         return false; // Withdrawal not found
     }
@@ -280,7 +92,7 @@ public class CareerCenterStaffController extends BaseController {
     public boolean rejectWithdrawal(Withdrawal withdrawalToReject) {
         if (withdrawalToReject != null) {
             withdrawalToReject.setStatus("Rejected");
-            return rewriteWithdrawalCSV(); // Write changes to file
+            return rewriteWithdrawalCSV(withdrawalPath, withdrawals); // Write changes to file
         }
         return false; // Withdrawal not found
     }
@@ -294,7 +106,7 @@ public class CareerCenterStaffController extends BaseController {
                                                List<String> companyFilters, List<String> majorFilters) {
 
         // Start with a stream of all internships
-        Stream<Internship> stream = internships.stream();
+        Stream<Internship> stream = internships.values().stream();
 
         // Apply status filter if provided
         if (statusFilters != null && !statusFilters.isEmpty()) {
