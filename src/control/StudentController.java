@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StudentController extends BaseController {
@@ -225,144 +226,117 @@ public class StudentController extends BaseController {
         List<String> notifications = new ArrayList<>();
         String studentID = student.getUserID();
 
+        // Lists to store IDs of items to remove *after* iteration is complete
+        // This avoids a ConcurrentModificationException
         List<String[]> applicationsToRemove = new ArrayList<>();
         List<String[]> withdrawalsToRemove = new ArrayList<>();
 
-        // Helper to split lines correctly (handles quoted CSV fields)
-        java.util.function.Function<String, String[]> splitLine = line ->
-                line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-        // Set to hold Internship IDs for which a withdrawal request exists,
-        // so we don't process the basic application status first.
-        Set<String> withdrawalRequestIds = new HashSet<>();
-
         // --- A. PRE-STEP: Populate Withdrawal Request IDs for the student ---
-        try (Stream<String> lines = Files.lines(withdrawalPath)) {
-            lines.skip(1)
-                    .map(splitLine)
-                    .filter(cols -> cols.length == 8)
-                    .filter(cols -> unquote(cols[1]).equals(studentID))
-                    .forEach(cols -> withdrawalRequestIds.add(unquote(cols[0])));
-        } catch (IOException e) {
-            System.err.println("Error reading withdrawal file to check existing requests: " + e.getMessage());
-        }
+        // Get all internship IDs for which this student has a withdrawal request
+        Set<String> withdrawalRequestIds = withdrawals.values().stream()
+                .flatMap(List::stream) // Flatten Stream<List<Withdrawal>> to Stream<Withdrawal>
+                .filter(w -> w.getUserId().equals(studentID))
+                .map(w -> w.getUUID().toString()) // Get the internship ID (UUID)
+                .collect(Collectors.toSet());
 
-        // --- 1. Check withdrawal request updates (Approved/Rejected/Denied) ---
-        try (Stream<String> lines = Files.lines(withdrawalPath)) {
-            lines.skip(1)
-                    .map(splitLine)
-                    .filter(cols -> cols.length == 8)
-                    .filter(cols -> unquote(cols[1]).equals(studentID))
-                    .forEach(cols -> {
-                        String status = unquote(cols[7]); // Status is at index 7
-                        String internshipId = unquote(cols[0]);
-                        Internship internship = internships.get(internshipId);
-                        String internshipTitle = internship.getTitle();
+        // --- 1. Check withdrawal request updates (Approved/Rejected) ---
+        // Iterate over all withdrawals from the in-memory map
+        withdrawals.values().stream()
+                .flatMap(List::stream)
+                .filter(w -> w.getUserId().equals(studentID))
+                .forEach(withdrawal -> {
+                    String status = withdrawal.getStatus();
+                    String internshipId = withdrawal.getUUID().toString();
+                    Internship internship = internships.get(internshipId);
+                    String internshipTitle = (internship != null) ? internship.getTitle() : "[Unknown Internship]";
 
-                        if (status.equalsIgnoreCase("Approved")) {
-                            notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been approved.");
-                            // Approved withdrawal means the original application must be removed
-                            applicationsToRemove.add(new String[]{internshipId, studentID});
-                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
-                        } else if (status.equalsIgnoreCase("Rejected")) { // Using "Rejected" from your provided code, assuming it means "Denied"
-                            notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been rejected. Your original application status is restored.");
-                            // Denied withdrawal means the withdrawal request is removed
-                            withdrawalsToRemove.add(new String[]{internshipId, studentID});
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Error reading withdrawal request file for notifications: " + e.getMessage());
-        }
+                    if (status.equalsIgnoreCase("Approved")) {
+                        notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been approved.");
+                        // Mark both the withdrawal and the original application for removal
+                        applicationsToRemove.add(new String[]{internshipId, studentID});
+                        withdrawalsToRemove.add(new String[]{internshipId, studentID});
+                    } else if (status.equalsIgnoreCase("Rejected")) {
+                        notifications.add("Your withdrawal request for Internship: " + internshipTitle + " has been rejected. Your original application status is restored.");
+                        // Mark only the withdrawal request for removal
+                        withdrawalsToRemove.add(new String[]{internshipId, studentID});
+                    }
+                });
 
         // --- 2. Check application status updates (Approved/Rejected) ---
-        // Only process applications that DONT have a pending/resolved withdrawal request (already handled in step 1)
-        try (Stream<String> lines = Files.lines(applicationPath)) {
-            lines.skip(1)
-                    .map(splitLine)
-                    .filter(cols -> cols.length == 8)
-                    .filter(cols -> unquote(cols[1]).equals(studentID))
-                    .forEach(cols -> {
-                        String status = unquote(cols[7]);
-                        String internshipId = unquote(cols[0]);
+        // Iterate over all applications from the in-memory map
+        applications.values().stream()
+                .flatMap(List::stream)
+                .filter(app -> app.getUserId().equals(studentID))
+                .forEach(application -> {
+                    String status = application.getStatus();
+                    String internshipId = application.getUUID().toString();
 
-                        Internship internship = internships.get(internshipId);
+                    // Skip this application if a withdrawal request was found for it (handled in step 1)
+                    if (withdrawalRequestIds.contains(internshipId)) {
+                        return;
+                    }
 
-                        // Skip this application if a withdrawal request was found for it (handled in step 1)
-                        if (withdrawalRequestIds.contains(internshipId)) {
-                            return;
-                        }
+                    Internship internship = internships.get(internshipId);
+                    String internshipTitle = (internship != null) ? internship.getTitle() : "[Unknown Internship]";
 
-                        String internshipTitle = internship.getTitle();
+                    if (status.equalsIgnoreCase("Approved")) {
+                        notifications.add("Your application for Internship: " + internshipTitle + " has been approved.");
+                    } else if (status.equalsIgnoreCase("Rejected")) {
+                        notifications.add("Your application for Internship: " + internshipTitle + " has been rejected.");
+                        // Mark the rejected application for removal
+                        applicationsToRemove.add(new String[]{internshipId, studentID});
+                    }
+                });
 
-                        if (status.equalsIgnoreCase("Approved")) {
-                            notifications.add("Your application for Internship: " + internshipTitle + " has been approved.");
-                        } else if (status.equalsIgnoreCase("Rejected")) {
-                            notifications.add("Your application for Internship: " + internshipTitle + " has been rejected.");
-                            applicationsToRemove.add(new String[]{internshipId, studentID});
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Error reading application file for notifications: " + e.getMessage());
-        }
+        // --- 3. Perform all removals AFTER iterations are complete ---
 
-        // Remove Applications
+        // Use a Set to avoid removing from the same list multiple times if (e.g.) two
+        // rejected apps for the same internship were found (which shouldn't happen, but is safe)
+        Set<String> modifiedAppInternshipIds = new HashSet<>();
+        Set<String> modifiedWithdrawalInternshipIds = new HashSet<>();
+
         for (String[] app : applicationsToRemove) {
-            removeApplication(app[0], app[1]);
+            if (removeApplicationInternal(app[0], app[1])) {
+                modifiedAppInternshipIds.add(app[0]);
+            }
         }
 
-        // Remove Withdrawal Requests
         for (String[] withdrawal : withdrawalsToRemove) {
-            removeWithdrawal(withdrawal[0], withdrawal[1]);
+            if (removeWithdrawalInternal(withdrawal[0], withdrawal[1])) {
+                modifiedWithdrawalInternshipIds.add(withdrawal[0]);
+            }
+        }
+
+        // --- 4. Rewrite CSV files only if changes were made ---
+
+        // Check if any lists that were modified still exist (they might be empty now)
+        // and rewrite the whole file.
+        if (!modifiedAppInternshipIds.isEmpty()) {
+            rewriteApplicationCSV(applicationPath, applications);
+        }
+
+        if (!modifiedWithdrawalInternshipIds.isEmpty()) {
+            rewriteWithdrawalCSV(withdrawalPath, withdrawals);
         }
 
         return notifications;
     }
 
-    void removeApplication(String internshipId, String studentId) {
-        try {
-            List<String> lines = Files.readAllLines(applicationPath);
-            List<String> updatedLines = new ArrayList<>();
-            updatedLines.add(lines.get(0)); // Keep header
-
-            for (int i = 1; i < lines.size(); i++) {
-                String line = lines.get(i);
-                String[] cols = line.split(",", -1);
-                if (cols.length > 1) {
-                    String fileInternshipId = cols[0].trim().replace("\"", "");
-                    String fileStudentId = cols[1].trim().replace("\"", "");
-                    if (!(fileInternshipId.equals(internshipId) && fileStudentId.equals(studentId))) {
-                        updatedLines.add(line);
-                    }
-                }
-            }
-
-            Files.write(applicationPath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            System.err.println("Error removing application: " + e.getMessage());
+    private boolean removeApplicationInternal(String internshipId, String studentId) {
+        List<Application> appList = applications.get(internshipId);
+        if (appList != null) {
+            // Use removeIf to find and remove the matching application
+            return appList.removeIf(app -> app.getUserId().equals(studentId));
         }
+        return false;
     }
 
-    void removeWithdrawal(String internshipId, String studentId) {
-        try {
-            List<String> lines = Files.readAllLines(withdrawalPath);
-            List<String> updatedLines = new ArrayList<>();
-            updatedLines.add(lines.get(0)); // Keep header
-
-            for (int i = 1; i < lines.size(); i++) {
-                String line = lines.get(i);
-                String[] cols = line.split(",", -1);
-                if (cols.length > 1) {
-                    String fileInternshipId = cols[0].trim().replace("\"", "");
-                    String fileStudentId = cols[1].trim().replace("\"", "");
-                    if (!(fileInternshipId.equals(internshipId) && fileStudentId.equals(studentId))) {
-                        updatedLines.add(line);
-                    }
-                }
-            }
-
-            Files.write(withdrawalPath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            System.err.println("Error removing withdrawal request: " + e.getMessage());
+    private boolean removeWithdrawalInternal(String internshipId, String studentId) {
+        List<Withdrawal> withdrawalList = withdrawals.get(internshipId);
+        if (withdrawalList != null) {
+            // Use removeIf to find and remove the matching withdrawal request
+            return withdrawalList.removeIf(w -> w.getUserId().equals(studentId));
         }
+        return false;
     }
 }
