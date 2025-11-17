@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StudentController extends BaseController {
     private final Map<String, Internship> internships;
@@ -29,31 +30,49 @@ public class StudentController extends BaseController {
         withdrawals = loadWithdrawals(withdrawalPath);
     }
 
-    public List<Internship> getAvailableInternships(Student student) {
+    public List<Internship> getAvailableInternships(Student student, List<String> levelFilters, List<String> companyFilters) {
         String studentMajor = student.getMajor();
         int studentYear = student.getYearOfStudy();
         LocalDate today = LocalDate.now(); // Get the current date once
 
-        return internships.values().stream()
-                .filter(Internship::isVisible) // Must be visible
-                .filter(i -> "Approved".equalsIgnoreCase(i.getStatus())) // Must be approved by staff
-
-                .filter(i -> !i.getClosingDate().isBefore(today)) // Must not be past closing date
-                .filter(i -> !hasAlreadyApplied(student, i)) // Student must not have applied
-
+        Stream<Internship> stream = internships.values().stream()
+                .filter(Internship::isVisible)
+                .filter(i -> "Approved".equalsIgnoreCase(i.getStatus()))
+                .filter(i -> !i.getClosingDate().isBefore(today))
+                .filter(i -> !hasAlreadyApplied(student, i))
                 .filter(i -> i.getPreferredMajor() != null &&
-                        i.getPreferredMajor().equalsIgnoreCase(studentMajor)) // Major must match
+                        i.getPreferredMajor().equalsIgnoreCase(studentMajor))
                 .filter(i -> {
-                    // Filter by level based on student year
                     String level = i.getLevel();
                     if (studentYear <= 2) {
-                        // Year 1 & 2 can only apply for Basic
                         return "Basic".equalsIgnoreCase(level);
                     } else {
-                        // Year 3+ can apply for any level
                         return true;
                     }
-                })
+                });
+
+        // Filter logic
+        // Apply level filter if provided
+        if (levelFilters != null && !levelFilters.isEmpty()) {
+            Set<String> normalizedFilters = levelFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getLevel() != null &&
+                    normalizedFilters.contains(i.getLevel().toLowerCase()));
+        }
+
+        // Apply company filter if provided
+        if (companyFilters != null && !companyFilters.isEmpty()) {
+            Set<String> normalizedFilters = companyFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getCompanyName() != null &&
+                    normalizedFilters.contains(i.getCompanyName().toLowerCase()));
+        }
+
+        return stream
                 .sorted(Comparator.comparing(Internship::getTitle, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
     }

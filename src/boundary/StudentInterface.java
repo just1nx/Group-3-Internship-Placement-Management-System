@@ -13,6 +13,9 @@ public class StudentInterface implements CommandLineInterface {
     private final StudentController studentController = new StudentController();
     private final Student student;
 
+    private final List<String> levelFilters = new ArrayList<>();
+    private final List<String> companyFilters = new ArrayList<>();
+
     public StudentInterface(Student student) {
         this.student = student;
     }
@@ -42,8 +45,9 @@ public class StudentInterface implements CommandLineInterface {
             System.out.println("Student Menu - Welcome, " + student.getName());
             System.out.println("==========================================");
             System.out.println("1. View and Apply for Internships");
-            System.out.println("2. View, Accept and Withdraw Applications");
-            System.out.println("3. Logout");
+            System.out.println("2. Manage My Applications");
+            System.out.println("3. Set Filters"); // <-- REVISED
+            System.out.println("4. Logout"); // <-- REVISED
             System.out.print("Enter your choice: ");
 
             String choice = scanner.nextLine();
@@ -56,7 +60,10 @@ public class StudentInterface implements CommandLineInterface {
                     handleManageApplications();
                     break;
                 case "3":
-                    running = false; // Exits the while loop
+                    handleSetFilters();
+                    break;
+                case "4":
+                    running = false;
                     break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
@@ -68,11 +75,17 @@ public class StudentInterface implements CommandLineInterface {
 
     private void handleViewAndApplyInternships() {
         System.out.println("\n--- View Available Internships ---");
+
+        System.out.println("Active Filters:");
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Company: " + (companyFilters.isEmpty() ? "[Any]" : companyFilters));
+        System.out.println("---------------------------------");
+
         // Get filtered list of internships
-        List<Internship> available = studentController.getAvailableInternships(student);
+        List<Internship> available = studentController.getAvailableInternships(student, levelFilters, companyFilters);
 
         if (available.isEmpty()) {
-            System.out.println("No internships are currently available that match your profile (Major/Year).");
+            System.out.println("No internships are currently available that match your profile or active filters.");
             return;
         }
 
@@ -119,6 +132,71 @@ public class StudentInterface implements CommandLineInterface {
         } else {
             System.out.println("Invalid choice.");
         }
+    }
+
+    private void manageFilterList(String filterName, List<String> filterList) {
+        while (true) {
+            System.out.println("\n--- Managing '" + filterName + "' Filters ---");
+            if (filterList.isEmpty()) {
+                System.out.println("Current filters: [None]");
+            } else {
+                System.out.println("Current filters: " + filterList);
+            }
+            System.out.println("1. Add a filter value");
+            System.out.println("2. Remove a filter value");
+            System.out.println("3. Clear all filters for this category");
+            System.out.println("0. Done with this category");
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter value to add: ");
+                    String valueToAdd = scanner.nextLine();
+                    if (valueToAdd != null && !valueToAdd.isEmpty()) {
+                        filterList.add(valueToAdd);
+                        System.out.println("'" + valueToAdd + "' added.");
+                    }
+                    break;
+                case "2":
+                    if (filterList.isEmpty()) {
+                        System.out.println("No filters to remove.");
+                        break;
+                    }
+                    System.out.println("Select value to remove:");
+                    for (int i = 0; i < filterList.size(); i++) {
+                        System.out.println((i + 1) + ". " + filterList.get(i));
+                    }
+                    System.out.println("0. Cancel");
+                    System.out.print("Enter number: ");
+                    try {
+                        int index = Integer.parseInt(scanner.nextLine());
+                        if (index > 0 && index <= filterList.size()) {
+                            String removed = filterList.remove(index - 1);
+                            System.out.println("'" + removed + "' removed.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input.");
+                    }
+                    break;
+                case "3":
+                    filterList.clear();
+                    System.out.println("All filters for '" + filterName + "' cleared.");
+                    break;
+                case "0":
+                    return; // Exit this helper
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+
+    private void handleSetFilters() {
+        System.out.println("\n--- Set Internship Filters ---");
+        // Only manage filters relevant to the student
+        manageFilterList("Level", levelFilters);
+        manageFilterList("Company", companyFilters);
+        System.out.println("\nAll filters updated successfully.");
     }
 
     private void handleManageApplications() {

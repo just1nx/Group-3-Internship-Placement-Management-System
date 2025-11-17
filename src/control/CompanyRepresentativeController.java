@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CompanyRepresentativeController extends BaseController {
     private final Map<String, Internship> internships;
@@ -43,14 +44,50 @@ public class CompanyRepresentativeController extends BaseController {
         return count < maxInternships;
     }
 
-    public List<Internship> viewMyInternships(String companyName) {
+    public List<Internship> viewMyInternships(String companyName, List<String> statusFilters, List<String> levelFilters, List<String> majorFilters) {
         if (companyName == null || companyName.trim().isEmpty()) {
             return new ArrayList<>();
         }
         String target = companyName.trim();
-        return internships.values().stream()
+
+        // Start with the base stream filtered by company
+        Stream<Internship> stream = internships.values().stream()
                 .filter(i -> i.getCompanyName() != null &&
-                        i.getCompanyName().trim().equalsIgnoreCase(target))
+                        i.getCompanyName().trim().equalsIgnoreCase(target));
+
+        // Filter logic
+        // Apply status filter if provided
+        if (statusFilters != null && !statusFilters.isEmpty()) {
+            Set<String> normalizedFilters = statusFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getStatus() != null &&
+                    normalizedFilters.contains(i.getStatus().toLowerCase()));
+        }
+
+        // Apply level filter if provided
+        if (levelFilters != null && !levelFilters.isEmpty()) {
+            Set<String> normalizedFilters = levelFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getLevel() != null &&
+                    normalizedFilters.contains(i.getLevel().toLowerCase()));
+        }
+
+        // Apply major filter if provided
+        if (majorFilters != null && !majorFilters.isEmpty()) {
+            Set<String> normalizedFilters = majorFilters.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            stream = stream.filter(i -> i.getPreferredMajor() != null &&
+                    normalizedFilters.contains(i.getPreferredMajor().toLowerCase()));
+        }
+
+        return stream
+                .sorted(Comparator.comparing(Internship::getTitle, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
     }
 
@@ -65,9 +102,9 @@ public class CompanyRepresentativeController extends BaseController {
             String representativeId, // This is the 'Representatives' field
             int numberOfSlots
     ) {
-        // 1. Generate unique ID and set default values
+        // Generate unique ID and set default values
         UUID uuid = UUID.randomUUID();
-        String status = "Pending"; // As per PDF, must be approved by staff
+        String status = "Pending"; // Default to pending
         boolean visibility = false;  // Default to not visible
 
         LocalDate opening;
@@ -80,14 +117,14 @@ public class CompanyRepresentativeController extends BaseController {
             return false;
         }
 
-        // 2. Create new Internship object
+        // Create new Internship object
         Internship newInternship = new Internship(uuid, title, description, level, preferredMajor,
                 opening, closing, status, companyName, representativeId, numberOfSlots, visibility);
 
-        // 3. Add new internship to the in-memory map
+        // Add new internship to the in-memory map
         internships.put(uuid.toString(), newInternship);
 
-        // 4. Rewrite the entire CSV file with the new data
+        // Rewrite the entire CSV file with the new data
         return rewriteInternshipCSV(internshipPath, internships);
     }
 
@@ -165,7 +202,7 @@ public class CompanyRepresentativeController extends BaseController {
     }
 
     public Map<String, List<Application>> getInternshipsWithApplications(String companyName) {
-        // 1. Collect all internship IDs from the IN-MEMORY MAP
+        // Collect all internship IDs from the IN-MEMORY MAP
         Set<String> companyInternshipIds = internships.values().stream()
                 .filter(i -> i.getCompanyName() != null && i.getCompanyName().trim().equalsIgnoreCase(companyName.trim()))
                 .map(i -> i.getUUID().toString())
@@ -175,7 +212,7 @@ public class CompanyRepresentativeController extends BaseController {
             return Collections.emptyMap();
         }
 
-        // 2. Build the result map by filtering the pre-loaded applications
+        // Build the result map by filtering the pre-loaded applications
         Map<String, List<Application>> results = new HashMap<>();
         for (String internshipId : companyInternshipIds) {
             // Get the list of applications for this internship, or an empty list if none

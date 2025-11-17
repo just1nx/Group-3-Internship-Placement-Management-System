@@ -15,6 +15,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private final CompanyRepresentativeController companyRepController = new CompanyRepresentativeController();
     private final CompanyRepresentative companyRep;
 
+    private final List<String> statusFilters = new ArrayList<>();
+    private final List<String> levelFilters = new ArrayList<>();
+    private final List<String> majorFilters = new ArrayList<>();
+
     public CompanyRepresentativeInterface(CompanyRepresentative companyRep) {
         this.companyRep = companyRep;
     }
@@ -47,8 +51,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             System.out.println("4. View My Internship Opportunities");
             System.out.println("5. View My Applications by Internship");
             System.out.println("6. Manage Applications for an Internship");
-            System.out.println("7. Toggle Internship Visibility");
-            System.out.println("8. Logout");
+            System.out.println("7. Set Internship Filters");
+            System.out.println("8. Toggle Internship Visibility");
+            System.out.println("9. Logout");
             System.out.print("Enter your choice: ");
 
             String choice = scanner.nextLine();
@@ -73,10 +78,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
                     handleManageApplications();
                     break;
                 case "7":
-                    handleToggleVisibility();
+                    handleSetFilters();
                     break;
                 case "8":
-                    running = false; // Exits the while loop
+                    handleToggleVisibility();
+                    break;
+                case "9":
+                    running = false;
                     break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
@@ -343,7 +351,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleEditInternship() {
         System.out.println("\n--- Edit Internship Details ---");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships to edit.");
@@ -416,7 +424,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships to delete.");
@@ -442,7 +450,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     }
 
     private void handleViewMyInternships() {
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
+
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
         displayInternshipList(myInternships);
     }
 
@@ -460,7 +474,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
 
         // Get the list of the company's internship objects to iterate in order
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
 
         // 1. Iterate through each internship posted by the company
         int index = 1;
@@ -500,7 +514,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleManageApplications() {
         System.out.println("\n--- Manage Applications by Internship ---");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships posted to manage applications for.");
@@ -572,7 +586,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName());
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships.");
@@ -605,5 +619,71 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         } else {
             System.err.println("Please try again.");
         }
+    }
+
+    private void manageFilterList(String filterName, List<String> filterList) {
+        while (true) {
+            System.out.println("\n--- Managing '" + filterName + "' Filters ---");
+            if (filterList.isEmpty()) {
+                System.out.println("Current filters: [None]");
+            } else {
+                System.out.println("Current filters: " + filterList);
+            }
+            System.out.println("1. Add a filter value");
+            System.out.println("2. Remove a filter value");
+            System.out.println("3. Clear all filters for this category");
+            System.out.println("0. Done with this category");
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter value to add: ");
+                    String valueToAdd = scanner.nextLine();
+                    if (valueToAdd != null && !valueToAdd.isEmpty()) {
+                        filterList.add(valueToAdd);
+                        System.out.println("'" + valueToAdd + "' added.");
+                    }
+                    break;
+                case "2":
+                    if (filterList.isEmpty()) {
+                        System.out.println("No filters to remove.");
+                        break;
+                    }
+                    System.out.println("Select value to remove:");
+                    for (int i = 0; i < filterList.size(); i++) {
+                        System.out.println((i + 1) + ". " + filterList.get(i));
+                    }
+                    System.out.println("0. Cancel");
+                    System.out.print("Enter number: ");
+                    try {
+                        int index = Integer.parseInt(scanner.nextLine());
+                        if (index > 0 && index <= filterList.size()) {
+                            String removed = filterList.remove(index - 1);
+                            System.out.println("'" + removed + "' removed.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input.");
+                    }
+                    break;
+                case "3":
+                    filterList.clear();
+                    System.out.println("All filters for '" + filterName + "' cleared.");
+                    break;
+                case "0":
+                    return; // Exit this helper
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+
+    private void handleSetFilters() {
+        System.out.println("\n--- Set Internship Filters ---");
+        // Manage filters relevant to the company rep
+        manageFilterList("Status", statusFilters);
+        manageFilterList("Level", levelFilters);
+        manageFilterList("Major", majorFilters);
+        System.out.println("\nAll filters updated successfully.");
     }
 }
