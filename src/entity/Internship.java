@@ -294,32 +294,6 @@ public class Internship {
         this.numberOfSlots = numberOfSlots;
     }
 
-    /**
-     * Mark this internship as approved.
-     */
-    public void approveInternship() {
-        this.status = "Approved";
-    }
-
-    /**
-     * Mark this internship as rejected.
-     */
-    public void rejectInternship() {
-        this.status = "Rejected";
-    }
-
-    /**
-     * Mark this internship as filled (no slots left / placement completed).
-     */
-    public void fillInternship() {
-        this.status = "Filled";
-    }
-
-    /**
-     * Return whether this posting is visible to students.
-     *
-     * @return true when visible
-     */
     public boolean isVisible() {
         return visibility;
     }
