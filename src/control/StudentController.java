@@ -16,18 +16,43 @@ import java.util.stream.Stream;
  * Controller for student-facing operations.
  * <p>
  * Handles listing available internships, applying, accepting offers and requesting withdrawals.
+ * Enforces business rules such as maximum applications per student and single offer acceptance.
  * </p>
  */
 public class StudentController extends BaseController {
+    /**
+     * In-memory map of internship UUID -> Internship object loaded from CSV.
+     */
     private final Map<String, Internship> internships;
+
+    /**
+     * In-memory map of internship UUID -> list of Application objects loaded from CSV.
+     */
     private final Map<String, List<Application>> applications;
+
+    /**
+     * In-memory map of internship UUID -> list of Withdrawal objects loaded from CSV.
+     */
     private final Map<String, List<Withdrawal>> withdrawals;
 
-    // Define the path to the application and internship CSV file
+    /**
+     * Path to the application CSV data file.
+     */
     private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
+
+    /**
+     * Path to the internship CSV data file.
+     */
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
+
+    /**
+     * Path to the withdrawal CSV data file.
+     */
     private static final Path withdrawalPath = Paths.get("data/sample_withdrawal_list.csv");
 
+    /**
+     * Maximum number of active (pending or successful) applications allowed per student.
+     */
     private static final int maxApplication = 3;
 
     /**
@@ -42,11 +67,16 @@ public class StudentController extends BaseController {
     /**
      * Get internships available to the given student, taking into account visibility,
      * approval status, deadlines, student's major/year, and optional filters.
+     * <p>
+     * Filters out internships the student has already applied to, internships past their
+     * closing date, and applies year-based level restrictions (years 1-2 can only see "Basic").
+     * All filters use case-insensitive matching.
+     * </p>
      *
      * @param student student seeking internships
      * @param levelFilters optional level filters (nullable)
      * @param companyFilters optional company filters (nullable)
-     * @return list of internships matching eligibility and filters
+     * @return list of internships matching eligibility and filters, sorted by title
      */
     public List<Internship> getAvailableInternships(Student student, List<String> levelFilters, List<String> companyFilters) {
         String studentMajor = student.getMajor();
@@ -112,7 +142,10 @@ public class StudentController extends BaseController {
 
     /**
      * Check whether the student is permitted to apply for additional internships.
-     * Rules enforced: cannot apply if an offer is already accepted; max active applications limit.
+     * <p>
+     * Rules enforced: cannot apply if an offer is already accepted; maximum of 3 active
+     * (Pending or Successful status) applications allowed.
+     * </p>
      *
      * @param student the student to check
      * @return true if the student may submit another application
@@ -200,10 +233,14 @@ public class StudentController extends BaseController {
      * Accept an offered application for the student: mark one application "Accepted",
      * remove other pending/successful applications, remove pending withdrawals for the student,
      * decrement internship slots and persist all modified CSVs.
+     * <p>
+     * If the internship slots reach 0, the status is set to "Filled" and all other pending
+     * applications for that internship are automatically marked "Unsuccessful".
+     * </p>
      *
      * @param student the student accepting an offer
      * @param appToAccept the Application being accepted
-     * @return true when all persistence operations succeed
+     * @return true when all persistence operations succeed, false if student already accepted another offer
      */
     public boolean acceptOffer(Student student, Application appToAccept) {
         // Check if student has already accepted another offer
@@ -340,7 +377,11 @@ public class StudentController extends BaseController {
 
     /**
      * Produce student notifications (approved/rejected application or withdrawal outcomes).
-     * Side-effects: removes application/withdrawal entries that have been resolved and persists changes.
+     * <p>
+     * Side-effects: removes application/withdrawal entries that have been resolved (rejected
+     * applications and approved/rejected withdrawals) and persists changes to CSV files.
+     * Applications with pending withdrawal requests are skipped to avoid duplicate notifications.
+     * </p>
      *
      * @param student the student to check notifications for
      * @return list of notification messages (may be empty)
@@ -445,6 +486,16 @@ public class StudentController extends BaseController {
         return notifications;
     }
 
+    /**
+     * Internal helper to remove a specific application from the in-memory map.
+     * <p>
+     * Does not persist changes; caller must rewrite CSV afterward.
+     * </p>
+     *
+     * @param internshipId internship UUID string
+     * @param studentId student user id
+     * @return true if an application was removed, false if not found
+     */
     private boolean removeApplicationInternal(String internshipId, String studentId) {
         List<Application> appList = applications.get(internshipId);
         if (appList != null) {
@@ -454,6 +505,16 @@ public class StudentController extends BaseController {
         return false;
     }
 
+    /**
+     * Internal helper to remove a specific withdrawal request from the in-memory map.
+     * <p>
+     * Does not persist changes; caller must rewrite CSV afterward.
+     * </p>
+     *
+     * @param internshipId internship UUID string
+     * @param studentId student user id
+     * @return true if a withdrawal was removed, false if not found
+     */
     private boolean removeWithdrawalInternal(String internshipId, String studentId) {
         List<Withdrawal> withdrawalList = withdrawals.get(internshipId);
         if (withdrawalList != null) {

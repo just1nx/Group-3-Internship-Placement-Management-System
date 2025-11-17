@@ -294,6 +294,11 @@ public class Internship {
         this.numberOfSlots = numberOfSlots;
     }
 
+    /**
+     * Return whether this posting is visible to students.
+     *
+     * @return true when visible
+     */
     public boolean isVisible() {
         return visibility;
     }

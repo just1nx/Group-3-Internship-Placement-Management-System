@@ -15,18 +15,49 @@ import java.util.stream.Stream;
  * Controller for Career Centre staff operations.
  * <p>
  * Provides company registration approval, internship approval/rejection,
- * withdrawal management and reporting features.
+ * withdrawal management and reporting features. Manages approval workflows
+ * and generates system-wide reports.
  * </p>
  */
 public class CareerCenterStaffController extends BaseController {
+    /**
+     * In-memory map of company representative id -> CompanyRepresentative object loaded from CSV.
+     */
     private final Map<String, CompanyRepresentative> companyReps;
+
+    /**
+     * In-memory map of internship UUID -> Internship object loaded from CSV.
+     */
     private final Map<String, Internship> internships;
+
+    /**
+     * In-memory map of internship UUID -> list of Withdrawal objects loaded from CSV.
+     */
     private final Map<String, List<Withdrawal>> withdrawals;
+
+    /**
+     * In-memory map of internship UUID -> list of Application objects loaded from CSV.
+     */
     private final Map<String, List<Application>> applications;
-    // Define the paths to the data files
+
+    /**
+     * Path to the company representative CSV data file.
+     */
     private static final Path companyRepPath = Paths.get("data/sample_company_representative_list.csv");
+
+    /**
+     * Path to the internship CSV data file.
+     */
     private static final Path internshipPath = Paths.get("data/sample_internship_list.csv");
+
+    /**
+     * Path to the withdrawal CSV data file.
+     */
     private static final Path withdrawalPath  = Paths.get("data/sample_withdrawal_list.csv");
+
+    /**
+     * Path to the application CSV data file.
+     */
     private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
 
     /**
@@ -133,9 +164,13 @@ public class CareerCenterStaffController extends BaseController {
 
     /**
      * Approve a withdrawal request and persist the change.
+     * <p>
+     * If the original application was "Accepted", increments the internship slot count
+     * and changes status from "Filled" back to "Approved" if necessary.
+     * </p>
      *
      * @param withdrawalToApprove the Withdrawal to approve
-     * @return true on success
+     * @return true on success, false if withdrawal not found or on error
      */
     public boolean approveWithdrawal(Withdrawal withdrawalToApprove) {
         if (withdrawalToApprove == null) {
@@ -207,6 +242,11 @@ public class CareerCenterStaffController extends BaseController {
 
     /**
      * Generate a human-readable report string summarizing system-wide and per-internship metrics.
+     * <p>
+     * Includes counts of approved companies, internships by status, total applications and
+     * withdrawals, plus a detailed breakdown for each internship showing application counts,
+     * withdrawal requests, and percentage of total applications.
+     * </p>
      *
      * @return formatted report String
      */
@@ -287,6 +327,10 @@ public class CareerCenterStaffController extends BaseController {
 
     /**
      * View all internships applying optional filters.
+     * <p>
+     * All filters are case-insensitive and optional (null/empty lists = no filter applied).
+     * Results are sorted alphabetically by title.
+     * </p>
      *
      * @param statusFilters  list of statuses to include (null/empty = include all)
      * @param levelFilters   list of levels to include (null/empty = include all)

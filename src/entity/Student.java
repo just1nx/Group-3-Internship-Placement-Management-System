@@ -19,11 +19,6 @@ public class Student extends User {
     private String major;
 
     /**
-     * Current count of applications the student has submitted.
-     */
-    private int numberOfApplications;
-
-    /**
      * Create a Student record.
      *
      * @param userID       student user id
@@ -37,7 +32,6 @@ public class Student extends User {
         super(userID, name, passwordHash, email);
         this.yearOfStudy = yearOfStudy;
         this.major = major;
-        this.numberOfApplications = 0;
     }
 
     /**
@@ -58,50 +52,4 @@ public class Student extends User {
         return major;
     }
 
-    /**
-     * Get the number of applications submitted by the student.
-     *
-     * @return numberOfApplications
-     */
-    public int getNumberOfApplications() {
-        return numberOfApplications;
-    }
-
-    /**
-     * Increment the student's application count. Should be called when a new application is recorded.
-     */
-    public void apply() {
-        numberOfApplications++;
-    }
-
-    /**
-     * Placeholder: view the student's applications.
-     * <p>
-     * The concrete UI/controller logic shows details to the student; this method is a domain stub.
-     * </p>
-     */
-    public void viewApplications() {
-        // Able to view the internship he/she applied for, even after visibility is turned off,
-        // and the application status (“Pending”, Successful”, or “Unsuccessful”)
-    }
-
-    /**
-     * Placeholder: accept an offered internship and trigger withdrawal/cleanup of other applications.
-     * <p>
-     * The controller implements the full workflow; this remains a domain-level stub.
-     * </p>
-     */
-    public void acceptApplication() {
-        // accepts an internship offer, withdraws from the rest
-    }
-
-    /**
-     * Placeholder: request withdrawal for an application.
-     * <p>
-     * The controller handles persistence and request lifecycle; this is a stub.
-     * </p>
-     */
-    public void withdrawalRequest() {
-        // requests to withdraw an application
-    }
 }
