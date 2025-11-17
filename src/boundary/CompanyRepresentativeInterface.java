@@ -37,7 +37,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             }
             System.out.println("---------------------\n");
 
-            //student must acknowledge before proceeding
+            // Student must acknowledge before proceeding
             System.out.print("Press Enter to acknowledge");
             scanner.nextLine();
         }

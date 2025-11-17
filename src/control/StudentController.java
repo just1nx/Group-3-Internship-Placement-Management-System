@@ -196,7 +196,21 @@ public class StudentController extends BaseController {
                 // If slots are now 0, set status to "Filled"
                 if (acceptedInternship.getNumberOfSlots() == 0) {
                     acceptedInternship.setStatus("Filled");
+
+                    // And automatically reject all other pending applications for this internship
+                    List<Application> allAppsForThisInternship = applications.get(acceptedInternshipId);
+                    if (allAppsForThisInternship != null) {
+                        for (Application app : allAppsForThisInternship) {
+                            // If it's "Pending"
+                            if ("Pending".equalsIgnoreCase(app.getStatus())) {
+                                // We don't need to check for the user, as the
+                                // user who just accepted has status "Accepted" now.
+                                app.setStatus("Unsuccessful");
+                            }
+                        }
+                    }
                 }
+
                 internshipChanged = true;
             } else {
                 // This case (accepting an offer for an internship with 0 slots)
