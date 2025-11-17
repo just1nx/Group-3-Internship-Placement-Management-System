@@ -8,11 +8,27 @@ import entity.CompanyRepresentative;
 
 import java.util.Scanner;
 
-// This class represents the login interface of the application.
+/**
+ * Command-line authentication interface for the application.
+ * <p>
+ * Presents login, registration and password change options to users and
+ * dispatches to the appropriate user-specific menu once authentication succeeds.
+ * </p>
+ */
 public class AuthenticationInterface implements CommandLineInterface {
+    /**
+     * Scanner for reading user input from standard input.
+     */
     private final Scanner scanner = new Scanner(System.in);
+
+    /**
+     * Controller responsible for authentication operations (login/register/change password).
+     */
     private AuthenticationController authController = new AuthenticationController();
 
+    /**
+     * Displays the main authentication menu and handles user input until the user exits.
+     */
     @Override
     public void display() {
         // This is the main application loop
@@ -47,6 +63,10 @@ public class AuthenticationInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for credentials and attempts to log the user in.
+     * On success, shows the role-specific menu.
+     */
     private void handleLogin() {
         System.out.print("Enter User ID: ");
         String userID = scanner.nextLine();
@@ -64,6 +84,10 @@ public class AuthenticationInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Guides a company representative through the registration workflow.
+     * The created account will be pending approval by Career Center Staff.
+     */
     private void handleRegister() {
         System.out.println("\n--- Company Representative Registration ---");
         System.out.println("Please enter your details. Your account will require staff approval.");
@@ -107,6 +131,9 @@ public class AuthenticationInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for current credentials and a new password, and attempts to change the user's password.
+     */
     private void handleChangePassword() {
         System.out.print("Enter User ID: ");
         String userID = scanner.nextLine();
@@ -136,6 +163,11 @@ public class AuthenticationInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Shows the appropriate menu to a logged-in user based on their concrete user type.
+     *
+     * @param user the authenticated user
+     */
     private void showUserMenu(User user) {
         // Check the *type* of user object
         if (user instanceof Student) {

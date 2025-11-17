@@ -10,19 +10,45 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+/**
+ * Command-line interface for company representatives.
+ * <p>
+ * Representatives can create, edit, delete and view internships, manage applications,
+ * toggle visibility and set filters for their listings.
+ * </p>
+ */
 public class CompanyRepresentativeInterface implements CommandLineInterface {
+    /**
+     * Scanner for user input.
+     */
     private final Scanner scanner = new Scanner(System.in);
+
+    /**
+     * Controller that encapsulates company representative operations.
+     */
     private final CompanyRepresentativeController companyRepController = new CompanyRepresentativeController();
+
+    /**
+     * The authenticated company representative using this interface.
+     */
     private final CompanyRepresentative companyRep;
 
     private final List<String> statusFilters = new ArrayList<>();
     private final List<String> levelFilters = new ArrayList<>();
     private final List<String> majorFilters = new ArrayList<>();
 
+    /**
+     * Create an interface bound to a specific company representative.
+     *
+     * @param companyRep authenticated company representative
+     */
     public CompanyRepresentativeInterface(CompanyRepresentative companyRep) {
         this.companyRep = companyRep;
     }
 
+    /**
+     * Displays the representative menu, notification banner (if any) and processes user actions until logout.
+     */
     @Override
     public void display() {
         boolean running = true;
@@ -94,7 +120,12 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.println("Logging out... Returning to main menu.");
     }
 
-    // Helper methods
+    /**
+     * Helper that prompts for and validates internship level selection.
+     *
+     * @param current current value to keep when input is empty; null if creating new
+     * @return chosen level string or null if the user cancelled
+     */
     private String promptForLevel(String current) {
         while (true) {
             if (current == null) {
@@ -121,6 +152,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for a date string using pattern yyyy-MM-dd and validates the input.
+     *
+     * @param prompt  text to show prior to input
+     * @param current current value to keep when input is empty; null if creating new
+     * @return valid date string or null when cancelled
+     */
     private String promptForDate(String prompt, String current) {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         while (true) {
@@ -149,6 +187,12 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for number of slots (1-10) and validates input.
+     *
+     * @param current current value to keep when input is empty; null if creating new
+     * @return chosen number of slots, or -1 if the user cancels
+     */
     private int promptForSlots(String current) {
         while (true) {
             if (current == null) {
@@ -180,6 +224,12 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for a numeric internship selection and validates it against the provided maximum.
+     *
+     * @param maxSize maximum valid index
+     * @return selected index (1..maxSize) or -1 when cancelled
+     */
     private int promptForInternshipNumber(int maxSize) {
         while (true) {
             System.out.print("Enter the internship number (1-" + maxSize + ", or 0 to Cancel): ");
@@ -204,6 +254,12 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for a student/application number to manage and validates input.
+     *
+     * @param max maximum valid number
+     * @return selected number or -1 when cancelled
+     */
     private int promptForStudentNumber(int max) {
         while (true) {
             System.out.print("Enter the application number to manage (1-" + max + ", or 0 to Cancel): ");
@@ -227,6 +283,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Presents status options for applications and returns the chosen status string.
+     *
+     * @return "Successful", "Unsuccessful" or null if cancelled
+     */
     private String promptForNewApplicationStatus() {
         while (true) {
             System.out.println("\nSet New Status:");
@@ -250,6 +311,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Prompts for a visibility choice (on/off) and returns the numeric option or -1 if cancelled.
+     *
+     * @return 1 (on), 2 (off), or -1 if cancelled
+     */
     private int promptForOption() {
         while (true) {
             System.out.print("Enter visibility preference (1: On, 2: Off, 0: Cancel): ");
@@ -273,6 +339,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Nicely prints a list of internships to the console for the representative.
+     *
+     * @param myInternships list of internships to display
+     */
     private void displayInternshipList(List<Internship> myInternships) {
         if (myInternships.isEmpty()) {
             System.out.println("\n--- No internships found for " + companyRep.getCompanyName() + " ---");
@@ -297,7 +368,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
-
+    /**
+     * Guides the creation of a new internship opportunity.
+     */
     private void handleCreateInternship() {
         System.out.println("\n--- Create New Internship Opportunity ---");
 
@@ -348,6 +421,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
          }
     }
 
+    /**
+     * Guides editing an existing internship. Only pending internships may be edited.
+     */
     private void handleEditInternship() {
         System.out.println("\n--- Edit Internship Details ---");
 
@@ -421,6 +497,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Deletes a selected internship after confirmation.
+     */
     private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
 
@@ -449,6 +528,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Displays the representative's internships with the currently set filters.
+     */
     private void handleViewMyInternships() {
         System.out.println("\nActive Filters:");
         System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
@@ -460,6 +542,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         displayInternshipList(myInternships);
     }
 
+    /**
+     * Shows applications grouped by internship for the representative's company.
+     */
     private void handleViewApplications() {
         System.out.println("\n--- View Applications by Internship ---");
         System.out.println("==========================================");
@@ -511,6 +596,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         System.out.println("\n==========================================");
     }
 
+    /**
+     * Allows the representative to manage (approve/reject) individual applications.
+     */
     private void handleManageApplications() {
         System.out.println("\n--- Manage Applications by Internship ---");
 
@@ -583,6 +671,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Toggles the visibility of an approved internship posting.
+     */
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
 
@@ -621,6 +712,12 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Manages a filter list (add/remove/clear) used by this interface.
+     *
+     * @param filterName name shown to the user
+     * @param filterList list to mutate
+     */
     private void manageFilterList(String filterName, List<String> filterList) {
         while (true) {
             System.out.println("\n--- Managing '" + filterName + "' Filters ---");
@@ -678,6 +775,9 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Allows the representative to set status/level/major filters for listing views.
+     */
     private void handleSetFilters() {
         System.out.println("\n--- Set Internship Filters ---");
         // Manage filters relevant to the company rep

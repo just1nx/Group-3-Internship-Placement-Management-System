@@ -11,6 +11,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Controller for company representative operations.
+ * <p>
+ * Handles creating/editing/deleting internships, toggling visibility,
+ * and retrieving applications/notifications for a company.
+ * </p>
+ */
 public class CompanyRepresentativeController extends BaseController {
     private final Map<String, Internship> internships;
     private final Map<String, List<Application>> applications;
@@ -22,11 +29,20 @@ public class CompanyRepresentativeController extends BaseController {
     // Define the maximum number of internships allowed per company
     private static final int maxInternships = 5;
 
+    /**
+     * Construct the controller and preload internships and applications from CSV.
+     */
     public CompanyRepresentativeController() {
         internships = loadInternships(internshipPath);
         applications = loadApplications(applicationPath);
     }
 
+    /**
+     * Check whether the company may create more internships (enforces a maximum per company).
+     *
+     * @param companyName the company name to check
+     * @return true if the company can create another internship
+     */
     public boolean canCreateMoreInternships(String companyName) {
         if (companyName == null || companyName.trim().isEmpty()) {
             System.err.println("Error: Company name cannot be null or empty.");
@@ -44,6 +60,15 @@ public class CompanyRepresentativeController extends BaseController {
         return count < maxInternships;
     }
 
+    /**
+     * Return the company's internships, optionally filtered by status/level/major.
+     *
+     * @param companyName   company name to filter by
+     * @param statusFilters status filters to apply (nullable)
+     * @param levelFilters  level filters to apply (nullable)
+     * @param majorFilters  preferred major filters to apply (nullable)
+     * @return list of internships matching the criteria
+     */
     public List<Internship> viewMyInternships(String companyName, List<String> statusFilters, List<String> levelFilters, List<String> majorFilters) {
         if (companyName == null || companyName.trim().isEmpty()) {
             return new ArrayList<>();
@@ -91,6 +116,20 @@ public class CompanyRepresentativeController extends BaseController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Create a new internship and persist it (defaults to Pending / not visible).
+     *
+     * @param title           internship title
+     * @param description     description text
+     * @param level           level string (e.g., "Basic", "Advanced")
+     * @param preferredMajor  preferred major
+     * @param openingDate     opening date as yyyy-MM-dd
+     * @param closingDate     closing date as yyyy-MM-dd
+     * @param companyName     company name
+     * @param representativeId representative id string (stored in "Representatives" field)
+     * @param numberOfSlots   number of available slots
+     * @return true when creation and CSV write succeed
+     */
     public boolean createInternship(
             String title,
             String description,
@@ -128,6 +167,19 @@ public class CompanyRepresentativeController extends BaseController {
         return rewriteInternshipCSV(internshipPath, internships);
     }
 
+    /**
+     * Edit an existing internship (only allowed when internship is pending).
+     *
+     * @param internshipUUID     internship UUID string
+     * @param newTitle           new title (nullable/empty to keep)
+     * @param newDescription     new description
+     * @param newLevel           new level
+     * @param newPreferredMajor  new preferred major
+     * @param newOpeningDate     new opening date (yyyy-MM-dd)
+     * @param newClosingDate     new closing date (yyyy-MM-dd)
+     * @param newNumberOfSlots   new slot count (1-10)
+     * @return true when update and persistence succeed
+     */
     public boolean editInternship(
             String internshipUUID,
             String newTitle,
@@ -165,6 +217,12 @@ public class CompanyRepresentativeController extends BaseController {
         return rewriteInternshipCSV(internshipPath, internships);
     }
 
+    /**
+     * Delete a pending internship and persist changes.
+     *
+     * @param internshipUUID internship UUID string to delete
+     * @return true on successful deletion and persistence
+     */
     public boolean deleteInternship(String internshipUUID) {
         Internship internship = internships.get(internshipUUID);
 
@@ -182,6 +240,13 @@ public class CompanyRepresentativeController extends BaseController {
         return rewriteInternshipCSV(internshipPath, internships);
     }
 
+    /**
+     * Toggle visibility of an approved internship.
+     *
+     * @param internshipUUID internship UUID string
+     * @param option         1 = visible, 2 = not visible
+     * @return true on success
+     */
     public boolean toggleInternshipVisibility(String internshipUUID, int option) {
         Internship internship = internships.get(internshipUUID);
 
@@ -201,6 +266,12 @@ public class CompanyRepresentativeController extends BaseController {
         return rewriteInternshipCSV(internshipPath, internships);
     }
 
+    /**
+     * Retrieve internships for a company along with their applications.
+     *
+     * @param companyName company to retrieve apps for
+     * @return map of internship UUID -> list of Application (may be empty)
+     */
     public Map<String, List<Application>> getInternshipsWithApplications(String companyName) {
         // Collect all internship IDs from the IN-MEMORY MAP
         Set<String> companyInternshipIds = internships.values().stream()
@@ -223,6 +294,14 @@ public class CompanyRepresentativeController extends BaseController {
         return results;
     }
 
+    /**
+     * Update the status of a student's application for a given internship and persist changes.
+     *
+     * @param internshipUUID internship UUID string
+     * @param studentUserId  student user id
+     * @param newStatus      new status string (e.g., "Successful", "Unsuccessful")
+     * @return true when update and CSV rewrite succeed
+     */
     public boolean updateApplicationStatus(String internshipUUID, String studentUserId, String newStatus) {
         if (internshipUUID == null || studentUserId == null || newStatus == null) {
             System.err.println("Error: Invalid parameters.");
@@ -256,6 +335,13 @@ public class CompanyRepresentativeController extends BaseController {
     }
 
     // src/control/CompanyRepresentativeController.java
+    /**
+     * Produce short notifications for the company representative (e.g., rejected internships).
+     * Rejected internships are removed from the in-memory map and persisted.
+     *
+     * @param companyRep the CompanyRepresentative to check notifications for
+     * @return list of notification messages (may be empty)
+     */
     public List<String> checkNotifications(CompanyRepresentative companyRep) {
         List<String> notifications = new ArrayList<>();
         String companyName = companyRep.getCompanyName();

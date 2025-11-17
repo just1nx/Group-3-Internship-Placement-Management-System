@@ -11,6 +11,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Controller for Career Centre staff operations.
+ * <p>
+ * Provides company registration approval, internship approval/rejection,
+ * withdrawal management and reporting features.
+ * </p>
+ */
 public class CareerCenterStaffController extends BaseController {
     private final Map<String, CompanyRepresentative> companyReps;
     private final Map<String, Internship> internships;
@@ -22,6 +29,9 @@ public class CareerCenterStaffController extends BaseController {
     private static final Path withdrawalPath  = Paths.get("data/sample_withdrawal_list.csv");
     private static final Path applicationPath = Paths.get("data/sample_application_list.csv");
 
+    /**
+     * Construct controller and load relevant CSV-backed data into memory.
+     */
     public CareerCenterStaffController() {
         companyReps = loadCompanyReps(companyRepPath);
         internships = loadInternships(internshipPath);
@@ -29,13 +39,23 @@ public class CareerCenterStaffController extends BaseController {
         applications = loadApplications(applicationPath);
     }
 
-    // Public Methods for Company Rep Management
+    /**
+     * Get list of company representative registrations currently marked "Pending".
+     *
+     * @return list of pending CompanyRepresentative objects (may be empty)
+     */
     public List<CompanyRepresentative> getPendingRegistrations() {
         return companyReps.values().stream()
                 .filter(rep -> rep.getStatus().equalsIgnoreCase("Pending"))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Approve a pending company representative registration and persist the change.
+     *
+     * @param repToApprove the CompanyRepresentative to approve
+     * @return true on success, false otherwise
+     */
     public boolean approveRegistration(CompanyRepresentative repToApprove) {
         if (repToApprove != null) {
             repToApprove.setStatus("Approved");
@@ -44,6 +64,12 @@ public class CareerCenterStaffController extends BaseController {
         return false; // Rep not found
     }
 
+    /**
+     * Reject a company representative registration and persist the change.
+     *
+     * @param repToReject the CompanyRepresentative to reject
+     * @return true on success, false otherwise
+     */
     public boolean rejectRegistration(CompanyRepresentative repToReject) {
         if (repToReject != null) {
             repToReject.setStatus("Rejected");
@@ -53,13 +79,23 @@ public class CareerCenterStaffController extends BaseController {
     }
 
 
-    // Public Methods for Internship Management
+    /**
+     * Return internships with status "Pending".
+     *
+     * @return list of pending internships
+     */
     public List<Internship> getPendingInternships() {
         return internships.values().stream()
                 .filter(internship -> internship.getStatus().equalsIgnoreCase("Pending"))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Approve the provided internship and persist changes.
+     *
+     * @param internshipToApprove internship to approve
+     * @return true when persisted successfully
+     */
     public boolean approveInternship(Internship internshipToApprove) {
         if (internshipToApprove != null) {
             internshipToApprove.setStatus("Approved");
@@ -68,6 +104,12 @@ public class CareerCenterStaffController extends BaseController {
         return false; // Internship not found
     }
 
+    /**
+     * Reject the provided internship and persist changes.
+     *
+     * @param internshipToReject internship to reject
+     * @return true when persisted successfully
+     */
     public boolean rejectInternship(Internship internshipToReject) {
         if (internshipToReject != null) {
             internshipToReject.setStatus("Rejected");
@@ -77,7 +119,11 @@ public class CareerCenterStaffController extends BaseController {
     }
 
 
-    // Public Methods for Withdrawal Management
+    /**
+     * Get withdrawal requests currently marked "Pending".
+     *
+     * @return list of pending Withdrawal objects
+     */
     public List<Withdrawal> getPendingWithdrawals() {
         return withdrawals.values().stream()
                 .flatMap(List::stream)
@@ -85,6 +131,12 @@ public class CareerCenterStaffController extends BaseController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Approve a withdrawal request and persist the change.
+     *
+     * @param withdrawalToApprove the Withdrawal to approve
+     * @return true on success
+     */
     public boolean approveWithdrawal(Withdrawal withdrawalToApprove) {
         if (withdrawalToApprove != null) {
             withdrawalToApprove.setStatus("Approved");
@@ -93,6 +145,12 @@ public class CareerCenterStaffController extends BaseController {
         return false; // Withdrawal not found
     }
 
+    /**
+     * Reject a withdrawal request and persist the change.
+     *
+     * @param withdrawalToReject the Withdrawal to reject
+     * @return true on success
+     */
     public boolean rejectWithdrawal(Withdrawal withdrawalToReject) {
         if (withdrawalToReject != null) {
             withdrawalToReject.setStatus("Rejected");
@@ -101,6 +159,11 @@ public class CareerCenterStaffController extends BaseController {
         return false; // Withdrawal not found
     }
 
+    /**
+     * Generate a human-readable report string summarizing system-wide and per-internship metrics.
+     *
+     * @return formatted report String
+     */
     public String generateReportString() {
         StringBuilder sb = new StringBuilder();
         sb.append("========================================\n");
@@ -176,6 +239,15 @@ public class CareerCenterStaffController extends BaseController {
         return sb.toString();
     }
 
+    /**
+     * View all internships applying optional filters.
+     *
+     * @param statusFilters  list of statuses to include (null/empty = include all)
+     * @param levelFilters   list of levels to include (null/empty = include all)
+     * @param companyFilters list of companies to include (null/empty = include all)
+     * @param majorFilters   list of preferred majors to include (null/empty = include all)
+     * @return filtered and sorted list of internships
+     */
     public List<Internship> viewAllInternships(List<String> statusFilters, List<String> levelFilters,
                                                List<String> companyFilters, List<String> majorFilters) {
 

@@ -10,21 +10,50 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Command-line interface for Career Center staff.
+ * <p>
+ * Allows staff to approve/reject company registrations and internships,
+ * review and act on student withdrawal requests, generate reports, and
+ * set filters used when viewing internship listings.
+ * </p>
+ */
 public class CareerCenterStaffInterface implements CommandLineInterface {
+    /**
+     * Scanner used for reading input from the console.
+     */
     private final Scanner scanner = new Scanner(System.in);
+
+    /**
+     * Controller handling staff operations.
+     */
     private final CareerCenterStaffController staffController = new CareerCenterStaffController();
+
+    /**
+     * The authenticated staff member using this interface.
+     */
     private final CareerCenterStaff staff;
 
-    // Fields to store filter settings
+    /**
+     * Filters applied when viewing internships: status, level, company, major.
+     */
     private final List<String> statusFilters = new ArrayList<>();
     private final List<String> levelFilters = new ArrayList<>();
     private final List<String> companyFilters = new ArrayList<>();
     private final List<String> majorFilters = new ArrayList<>();
 
+    /**
+     * Construct the staff interface for a given staff user.
+     *
+     * @param staff the authenticated Career Center staff member
+     */
     public CareerCenterStaffInterface(CareerCenterStaff staff) {
         this.staff = staff;
     }
 
+    /**
+     * Displays the staff menu and handles interaction until the staff logs out.
+     */
     @Override
     public void display() {
         boolean running = true;
@@ -73,6 +102,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         System.out.println("Logging out... Returning to main menu.");
     }
 
+    /**
+     * Lists pending company representative registrations and permits the staff to approve or reject them.
+     */
     private void handleApproveRegistrations() {
         System.out.println("\n--- Approve/Reject Company Registrations ---");
 
@@ -152,6 +184,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Lists pending internship postings and permits the staff to approve or reject them.
+     */
     private void handleApproveInternships() {
         System.out.println("\n--- Approve/Reject Internship Opportunities ---");
 
@@ -231,6 +266,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Lists pending student withdrawal requests and permits the staff to approve or reject them.
+     */
     private void handleWithdrawalRequests() {
         System.out.println("\n--- Approve/Reject Student Withdrawal Requests ---");
 
@@ -311,6 +349,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Generates and displays internship reports produced by the controller.
+     */
     private void handleGenerateReports() {
         System.out.println("\n--- Generating Internship Reports ---");
 
@@ -326,6 +367,12 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         scanner.nextLine();
     }
 
+    /**
+     * Helper used to manage an individual filter category (add/remove/clear).
+     *
+     * @param filterName human-readable name of the filter category
+     * @param filterList list instance storing current filter values
+     */
     private void manageFilterList(String filterName, List<String> filterList) {
         while (true) {
             System.out.println("\n--- Managing '" + filterName + "' Filters ---");
@@ -383,6 +430,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Interactively sets filters for internships (status, level, company, major).
+     */
     private void handleSetFilters() {
         System.out.println("\n--- Set Internship Filters ---");
 
@@ -395,6 +445,9 @@ public class CareerCenterStaffInterface implements CommandLineInterface {
         System.out.println("\nAll filters updated successfully.");
     }
 
+    /**
+     * Views all internships using the currently set filters and displays summary information.
+     */
     private void handleViewAllInternships() {
         System.out.println("\n--- View All Internships ---");
 

@@ -1,6 +1,6 @@
 CompanyRepID,Name,CompanyName,Department,Position,Email,Status,Password
-tech.meta@meta.com,Bob Lee,Meta,Engineering,Software Engineer,tech.meta@meta.com,Approved,password
-hr.google@gmail.com,Alice Tan,Google,Human Resources,HR Manager,hr.google@gmail.com,Approved,password123
-eva.lim@grab.com,Eva Lim,Grab,Marketing,Marketing Intern,eva.lim@grab.com,Rejected,password
-david.chen@bytedance.com,David Chen,ByteDance,Data Science,Data Scientist,david.chen@bytedance.com,Pending,password
-recruit.shopee@shopee.sg,Carol Wong,Shopee,Talent Acquisition,Recruiter,recruit.shopee@shopee.sg,Approved,password
+tech.meta@meta.com,Bob Lee,Meta,Engineering,Software Engineer,tech.meta@meta.com,Approved,65536:mdpw5QrvlVRTSGklsAGdww==:b6EklcSi0+QnSNaIlKRt0/3IyZ8OshtmD8xaUaw16DQ=
+hr.google@gmail.com,Alice Tan,Google,Human Resources,HR Manager,hr.google@gmail.com,Approved,65536:mdpw5QrvlVRTSGklsAGdww==:b6EklcSi0+QnSNaIlKRt0/3IyZ8OshtmD8xaUaw16DQ=
+eva.lim@grab.com,Eva Lim,Grab,Marketing,Marketing Intern,eva.lim@grab.com,Rejected,65536:mdpw5QrvlVRTSGklsAGdww==:b6EklcSi0+QnSNaIlKRt0/3IyZ8OshtmD8xaUaw16DQ=
+david.chen@bytedance.com,David Chen,ByteDance,Data Science,Data Scientist,david.chen@bytedance.com,Pending,65536:mdpw5QrvlVRTSGklsAGdww==:b6EklcSi0+QnSNaIlKRt0/3IyZ8OshtmD8xaUaw16DQ=
+recruit.shopee@shopee.sg,Carol Wong,Shopee,Talent Acquisition,Recruiter,recruit.shopee@shopee.sg,Approved,65536:mdpw5QrvlVRTSGklsAGdww==:b6EklcSi0+QnSNaIlKRt0/3IyZ8OshtmD8xaUaw16DQ=

@@ -6,12 +6,29 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
 
+
+
+
+
+/**
+ * Base controller that provides common CSV read/write utilities and helpers used by other controllers.
+ * <p>
+ * Subclasses use these protected methods to load and persist domain objects.
+ * </p>
+ */
 public abstract class BaseController {
-    // Helper method to escape special characters for CSV format
+
+    /**
+     * Escape and quote a string for safe CSV output.
+     *
+     * @param s original string (may be null)
+     * @return a CSV-safe string (quotes doubled and field quoted when necessary)
+     */
     protected String escapeCSV(String s) {
         if (s == null) s = "";
         String out = s.replace("\"", "\"\"");
@@ -21,7 +38,12 @@ public abstract class BaseController {
         return out;
     }
 
-    // Helper method to unquote fields
+    /**
+     * Remove surrounding CSV quotes and unescape doubled quotes.
+     *
+     * @param s field value from CSV
+     * @return unquoted/unescaped string
+     */
     protected String unquote(String s) {
         if (s == null) return "";
         s = s.trim();
@@ -31,8 +53,13 @@ public abstract class BaseController {
         return s;
     }
 
-
     // Methods to read in CSV files
+    /**
+     * Load students from the given CSV path into a map keyed by student id.
+     *
+     * @param csvPath path to the student CSV file
+     * @return map of student id -> Student or null on read error
+     */
     protected Map<String, Student> loadStudents(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Student CSV not found: " + csvPath);
@@ -65,6 +92,12 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Load career centre staff entries from CSV into a map keyed by staff id.
+     *
+     * @param csvPath path to the staff CSV file
+     * @return map of staff id -> CareerCenterStaff or null on error
+     */
     protected Map<String, CareerCenterStaff> loadStaffs(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Staff CSV not found: " + csvPath);
@@ -97,6 +130,12 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Load company representatives from CSV into a map keyed by representative id/email.
+     *
+     * @param csvPath path to the company representative CSV file
+     * @return map of companyRep id/email -> CompanyRepresentative or null on error
+     */
     protected Map<String, CompanyRepresentative> loadCompanyReps(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Company representative CSV not found: " + csvPath);
@@ -131,6 +170,12 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Load internships from CSV into a map keyed by UUID string.
+     *
+     * @param csvPath path to the internship CSV
+     * @return map of uuid -> Internship or null on error
+     */
     protected Map<String, Internship> loadInternships(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Internship CSV not found: " + csvPath);
@@ -168,6 +213,12 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Load applications grouped by internship UUID into a map.
+     *
+     * @param csvPath path to the application CSV
+     * @return map of internship UUID -> list of Application objects or null on error
+     */
     protected Map<String, List<Application>> loadApplications(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Application CSV not found: " + csvPath);
@@ -207,6 +258,12 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Load withdrawal requests grouped by internship UUID into a map.
+     *
+     * @param csvPath path to the withdrawal CSV
+     * @return map of internship UUID -> list of Withdrawal objects or null on error
+     */
     protected Map<String, List<Withdrawal>> loadWithdrawals(Path csvPath) {
         if (!Files.exists(csvPath)) {
             System.err.println("Withdrawal CSV not found: " + csvPath);
@@ -248,6 +305,13 @@ public abstract class BaseController {
 
 
     // Methods to write to CSV files
+    /**
+     * Persist the provided students map to the CSV file.
+     *
+     * @param csvPath path to write
+     * @param students map of student id -> Student
+     * @return true when write succeeds, false on error
+     */
     protected boolean rewriteStudentCSV(Path csvPath, Map<String, Student> students) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -275,6 +339,13 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Persist staff entries to CSV.
+     *
+     * @param csvPath path to write
+     * @param staffs map of staff id -> CareerCenterStaff
+     * @return true when write succeeds
+     */
     protected boolean rewriteStaffCSV(Path csvPath, Map<String, CareerCenterStaff> staffs) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -302,6 +373,13 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Persist company representatives to CSV.
+     *
+     * @param csvPath path to write
+     * @param companyReps map of id -> CompanyRepresentative
+     * @return true on success
+     */
     protected boolean rewriteCompanyRepCSV(Path csvPath, Map<String, CompanyRepresentative> companyReps) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -331,6 +409,13 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Persist internships map to CSV.
+     *
+     * @param csvPath path to write
+     * @param internships map of uuid -> Internship
+     * @return true on success
+     */
     protected boolean rewriteInternshipCSV(Path csvPath, Map<String, Internship> internships) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -364,6 +449,13 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Persist application lists grouped by internship to CSV.
+     *
+     * @param csvPath path to write
+     * @param applications map of internship uuid -> list of Application
+     * @return true on success
+     */
     protected boolean rewriteApplicationCSV(Path csvPath, Map<String, List<Application>> applications) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -395,6 +487,13 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * Persist withdrawal lists grouped by internship to CSV.
+     *
+     * @param csvPath path to write
+     * @param withdrawals map of internship uuid -> list of Withdrawal
+     * @return true on success
+     */
     protected boolean rewriteWithdrawalCSV(Path csvPath, Map<String, List<Withdrawal>> withdrawals) {
         List<String> lines = new ArrayList<>();
         // Add header
@@ -425,4 +524,7 @@ public abstract class BaseController {
             return false;
         }
     }
+
+
+
 }

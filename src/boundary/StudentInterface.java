@@ -8,6 +8,13 @@ import entity.Student;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Command-line interface for students.
+ * <p>
+ * Students can view and apply for internships, manage their applications,
+ * set listing filters, and request withdrawals.
+ * </p>
+ */
 public class StudentInterface implements CommandLineInterface {
     private final Scanner scanner = new Scanner(System.in);
     private final StudentController studentController = new StudentController();
@@ -16,10 +23,18 @@ public class StudentInterface implements CommandLineInterface {
     private final List<String> levelFilters = new ArrayList<>();
     private final List<String> companyFilters = new ArrayList<>();
 
+    /**
+     * Construct a student interface bound to the given student.
+     *
+     * @param student authenticated student
+     */
     public StudentInterface(Student student) {
         this.student = student;
     }
 
+    /**
+     * Displays the student menu, shows any notifications, and processes user choices until logout.
+     */
     @Override
     public void display() {
         boolean running = true;
@@ -73,6 +88,9 @@ public class StudentInterface implements CommandLineInterface {
         System.out.println("Logging out... Returning to main menu.");
     }
 
+    /**
+     * Lists internships available to the student (respecting filters) and permits applying.
+     */
     private void handleViewAndApplyInternships() {
         System.out.println("\n--- View Available Internships ---");
 
@@ -134,6 +152,12 @@ public class StudentInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Generic helper to manage a named filter list (add/remove/clear).
+     *
+     * @param filterName display name of the category
+     * @param filterList list storing current filter values
+     */
     private void manageFilterList(String filterName, List<String> filterList) {
         while (true) {
             System.out.println("\n--- Managing '" + filterName + "' Filters ---");
@@ -191,6 +215,9 @@ public class StudentInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Guides the interactive setting of student-relevant filters.
+     */
     private void handleSetFilters() {
         System.out.println("\n--- Set Internship Filters ---");
         // Only manage filters relevant to the student
@@ -199,6 +226,9 @@ public class StudentInterface implements CommandLineInterface {
         System.out.println("\nAll filters updated successfully.");
     }
 
+    /**
+     * Shows all applications for the student, grouped by status, and provides actions to accept offers or request withdrawals.
+     */
     private void handleManageApplications() {
         System.out.println("\n--- Manage My Applications ---");
 
@@ -293,6 +323,13 @@ public class StudentInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Helper that returns the application status annotated if a withdrawal is pending.
+     *
+     * @param app                application to check
+     * @param pendingWithdrawals set of application UUIDs which have pending withdrawals
+     * @return display status (e.g. "Pending", "Successful (Withdrawal Requested)")
+     */
     private String getStatusWithWithdrawal(Application app, Set<String> pendingWithdrawals) {
         String status = app.getStatus();
         if (pendingWithdrawals.contains(app.getUUID().toString())) {
@@ -301,6 +338,11 @@ public class StudentInterface implements CommandLineInterface {
         return status;
     }
 
+    /**
+     * Guides the user through accepting a 'Successful' offer.
+     *
+     * @param successfulOffers list of successful offer entries (Application + Internship)
+     */
     private void handleAcceptOffer(List<Map.Entry<Application, Internship>> successfulOffers) {
         if (successfulOffers.isEmpty()) {
             System.out.println("You have no successful offers to accept.");
@@ -340,6 +382,12 @@ public class StudentInterface implements CommandLineInterface {
         }
     }
 
+    /**
+     * Guides the user through submitting a withdrawal request for an eligible application.
+     *
+     * @param actionableApps   list of candidate applications (Application + Internship)
+     * @param pendingWithdrawals set of UUID strings representing withdrawals already pending
+     */
     private void handleRequestWithdrawal(List<Map.Entry<Application, Internship>> actionableApps, Set<String> pendingWithdrawals) {
         if (actionableApps.isEmpty()) {
             System.out.println("You have no applications eligible for withdrawal.");

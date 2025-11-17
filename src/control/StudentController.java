@@ -12,6 +12,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Controller for student-facing operations.
+ * <p>
+ * Handles listing available internships, applying, accepting offers and requesting withdrawals.
+ * </p>
+ */
 public class StudentController extends BaseController {
     private final Map<String, Internship> internships;
     private final Map<String, List<Application>> applications;
@@ -24,12 +30,24 @@ public class StudentController extends BaseController {
 
     private static final int maxApplication = 3;
 
+    /**
+     * Construct the controller and preload internships, applications and withdrawals from CSV.
+     */
     public StudentController(){
         internships = loadInternships(internshipPath);
         applications = loadApplications(applicationPath);
         withdrawals = loadWithdrawals(withdrawalPath);
     }
 
+    /**
+     * Get internships available to the given student, taking into account visibility,
+     * approval status, deadlines, student's major/year, and optional filters.
+     *
+     * @param student student seeking internships
+     * @param levelFilters optional level filters (nullable)
+     * @param companyFilters optional company filters (nullable)
+     * @return list of internships matching eligibility and filters
+     */
     public List<Internship> getAvailableInternships(Student student, List<String> levelFilters, List<String> companyFilters) {
         String studentMajor = student.getMajor();
         int studentYear = student.getYearOfStudy();
@@ -77,6 +95,13 @@ public class StudentController extends BaseController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Check whether the student has already applied to the specified internship.
+     *
+     * @param student the student
+     * @param internship the internship to check
+     * @return true if the student has an existing application for that internship
+     */
     public boolean hasAlreadyApplied(Student student, Internship internship) {
         List<Application> appList = applications.get(internship.getUUID().toString());
         if (appList == null) {
@@ -85,6 +110,13 @@ public class StudentController extends BaseController {
         return appList.stream().anyMatch(app -> app.getUserId().equals(student.getUserID()));
     }
 
+    /**
+     * Check whether the student is permitted to apply for additional internships.
+     * Rules enforced: cannot apply if an offer is already accepted; max active applications limit.
+     *
+     * @param student the student to check
+     * @return true if the student may submit another application
+     */
     public boolean canApply(Student student) {
         // Get all applications for the student
         List<Application> allMyApps = applications.values().stream()
@@ -109,6 +141,13 @@ public class StudentController extends BaseController {
         return activeAppCount < maxApplication;
     }
 
+    /**
+     * Submit an application for the given student to the provided internship and persist it.
+     *
+     * @param student student applying
+     * @param internship internship being applied to
+     * @return true when application added and CSV rewrite succeeded
+     */
     public boolean applyForInternship(Student student, Internship internship) {
         // Create new Application object
         String status = "Pending"; // Default status
@@ -133,6 +172,12 @@ public class StudentController extends BaseController {
         return rewriteApplicationCSV(applicationPath, applications);
     }
 
+    /**
+     * Return a map of the student's applications mapped to their corresponding internships.
+     *
+     * @param student the student whose applications are requested
+     * @return map with Application keys and their Internship values
+     */
     public Map<Application, Internship> getMyApplications(Student student) {
         Map<Application, Internship> myApps = new HashMap<>();
         String studentId = student.getUserID();
@@ -151,6 +196,15 @@ public class StudentController extends BaseController {
         return myApps;
     }
 
+    /**
+     * Accept an offered application for the student: mark one application "Accepted",
+     * remove other pending/successful applications, remove pending withdrawals for the student,
+     * decrement internship slots and persist all modified CSVs.
+     *
+     * @param student the student accepting an offer
+     * @param appToAccept the Application being accepted
+     * @return true when all persistence operations succeed
+     */
     public boolean acceptOffer(Student student, Application appToAccept) {
         // Check if student has already accepted another offer
         boolean alreadyAccepted = getMyApplications(student).keySet().stream()
@@ -227,6 +281,12 @@ public class StudentController extends BaseController {
         return appSave && wthSave && intSave;
     }
 
+    /**
+     * Request a withdrawal for an existing application. The request is added with status "Pending".
+     *
+     * @param appToWithdraw the Application to withdraw
+     * @return true when the withdrawal request is saved
+     */
     public boolean requestWithdrawal(Application appToWithdraw) {
         // Create a new Withdrawal object
         Withdrawal withdrawal = new Withdrawal(
@@ -249,6 +309,12 @@ public class StudentController extends BaseController {
         return rewriteWithdrawalCSV(withdrawalPath, withdrawals);
     }
 
+    /**
+     * Return a set of internship UUID strings for which this student has pending withdrawal requests.
+     *
+     * @param student the student to check
+     * @return set of internship UUID strings with pending withdrawals for the student
+     */
     public Set<String> getPendingWithdrawalRequests(Student student) {
         return withdrawals.values().stream()
                 .flatMap(List::stream)
@@ -258,6 +324,13 @@ public class StudentController extends BaseController {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Produce student notifications (approved/rejected application or withdrawal outcomes).
+     * Side-effects: removes application/withdrawal entries that have been resolved and persists changes.
+     *
+     * @param student the student to check notifications for
+     * @return list of notification messages (may be empty)
+     */
     public List<String> checkNotifications(Student student) {
         List<String> notifications = new ArrayList<>();
         String studentID = student.getUserID();
