@@ -164,7 +164,7 @@ public class AuthenticationController extends BaseController {
                 return rewriteStaffCSV(staffPath, staffs);
             }
             default -> {
-                // 3. Handle unknown user types
+                // Handle unknown user types
                 System.err.println("Password change failed: Unknown user type.");
                 return false;
             }

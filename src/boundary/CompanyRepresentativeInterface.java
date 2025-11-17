@@ -67,6 +67,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             System.out.print("Press Enter to acknowledge");
             scanner.nextLine();
         }
+
         while (running) {
             System.out.println("\n=========================================================");
             System.out.println("Company Representative Menu - Welcome, " + companyRep.getName() + ", " + companyRep.getCompanyName());
@@ -426,8 +427,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
      */
     private void handleEditInternship() {
         System.out.println("\n--- Edit Internship Details ---");
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships to edit.");
@@ -502,8 +508,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
      */
     private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships to delete.");
@@ -548,6 +559,11 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
     private void handleViewApplications() {
         System.out.println("\n--- View Applications by Internship ---");
         System.out.println("==========================================");
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
 
         // Use the new controller method to get structured data: Map<Internship UUID, List<Application>>
         Map<String, List<Application>> applicationsByInternship =
@@ -559,7 +575,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
         }
 
         // Get the list of the company's internship objects to iterate in order
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
 
         // 1. Iterate through each internship posted by the company
         int index = 1;
@@ -601,8 +617,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
      */
     private void handleManageApplications() {
         System.out.println("\n--- Manage Applications by Internship ---");
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships posted to manage applications for.");
@@ -676,8 +697,13 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
      */
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
+        System.out.println("\nActive Filters:");
+        System.out.println("  Status: " + (statusFilters.isEmpty() ? "[Any]" : statusFilters));
+        System.out.println("  Level: " + (levelFilters.isEmpty() ? "[Any]" : levelFilters));
+        System.out.println("  Major: " + (majorFilters.isEmpty() ? "[Any]" : majorFilters));
+        System.out.println("---------------------------------");
 
-        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), null, null, null);
+        List<Internship> myInternships = companyRepController.viewMyInternships(companyRep.getCompanyName(), statusFilters, levelFilters, majorFilters);
 
         if (myInternships.isEmpty()) {
             System.out.println("You have no internships.");
