@@ -118,18 +118,6 @@ public class Internship {
         this.numberOfSlots = numberOfSlots;
     }
 
-    public void approveInternship() {
-        this.status = "Approved";
-    }
-
-    public void rejectInternship() {
-        this.status = "Rejected";
-    }
-
-    public void fillInternship() {
-        this.status = "Filled";
-    }
-
     public boolean isVisible() {
         return visibility;
     }

@@ -86,11 +86,57 @@ public class CareerCenterStaffController extends BaseController {
     }
 
     public boolean approveWithdrawal(Withdrawal withdrawalToApprove) {
-        if (withdrawalToApprove != null) {
-            withdrawalToApprove.setStatus("Approved");
-            return rewriteWithdrawalCSV(withdrawalPath, withdrawals); // Write changes to file
+        if (withdrawalToApprove == null) {
+            return false; // Withdrawal not found
         }
-        return false; // Withdrawal not found
+
+        // Set withdrawal status to "Approved"
+        withdrawalToApprove.setStatus("Approved");
+        boolean internshipChanged = false;
+
+        // Get the IDs for finding the related objects
+        String internshipId = withdrawalToApprove.getUUID().toString();
+        String studentId = withdrawalToApprove.getUserId();
+
+        // Find the original Application to check its status
+        Application originalApplication = null;
+        List<Application> appList = applications.get(internshipId);
+        if (appList != null) {
+            // Find the specific application from this student for this internship
+            originalApplication = appList.stream()
+                    .filter(app -> app.getUserId().equals(studentId))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // If the original application was "Accepted", update the internship
+        if (originalApplication != null && "Accepted".equalsIgnoreCase(originalApplication.getStatus())) {
+
+            Internship internship = internships.get(internshipId);
+            if (internship != null) {
+                int currentSlots = internship.getNumberOfSlots();
+
+                internship.setNumberOfSlots(currentSlots + 1);
+
+                // If status was "Filled", a slot has opened,
+                // so it must be "Approved" again.
+                if ("Filled".equalsIgnoreCase(internship.getStatus())) {
+                    internship.setStatus("Approved");
+                }
+
+                internshipChanged = true;
+            }
+        }
+
+        // Save all changes to the relevant CSV files
+        boolean wthSave = rewriteWithdrawalCSV(withdrawalPath, withdrawals);
+        boolean intSave = true; // Assume true unless changes were made
+
+        if (internshipChanged) {
+            intSave = rewriteInternshipCSV(internshipPath, internships);
+        }
+
+        return wthSave && intSave;
     }
 
     public boolean rejectWithdrawal(Withdrawal withdrawalToReject) {
