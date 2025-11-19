@@ -86,7 +86,11 @@ public class AuthenticationInterface implements CommandLineInterface {
 
     /**
      * Guides a company representative through the registration workflow.
-     * The created account will be pending approval by Career Center Staff.
+     * <p>
+     * Performs basic email format validation, assigns a default password of
+     * "password" if none is entered, and submits the account for staff approval
+     * (initial status Pending). Any validation or persistence errors are reported.
+     * </p>
      */
     private void handleRegister() {
         System.out.println("\n--- Company Representative Registration ---");

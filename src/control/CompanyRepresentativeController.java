@@ -128,6 +128,11 @@ public class CompanyRepresentativeController extends BaseController {
 
     /**
      * Create a new internship and persist it (defaults to Pending / not visible).
+     * <p>
+     * Dates must be in ISO-8601 (yyyy-MM-dd) format and opening date must not be
+     * after closing date. The representativeId is stored in the "Representatives"
+     * field. No duplicate title or UUID checks are performed; UUID is system-generated.
+     * </p>
      *
      * @param title           internship title
      * @param description     description text
@@ -138,7 +143,7 @@ public class CompanyRepresentativeController extends BaseController {
      * @param companyName     company name
      * @param representativeId representative id string (stored in "Representatives" field)
      * @param numberOfSlots   number of available slots
-     * @return true when creation and CSV write succeed
+     * @return true when creation and CSV write succeed; false on validation/persistence error
      */
     public boolean createInternship(
             String title,
@@ -241,7 +246,7 @@ public class CompanyRepresentativeController extends BaseController {
      * Delete a pending internship and persist changes.
      *
      * @param internshipUUID internship UUID string to delete
-     * @return true on successful deletion and persistence
+     * @return true on successful deletion and persistence; false if not pending
      */
     public boolean deleteInternship(String internshipUUID) {
         Internship internship = internships.get(internshipUUID);
@@ -332,7 +337,7 @@ public class CompanyRepresentativeController extends BaseController {
      * @param internshipUUID internship UUID string
      * @param studentUserId  student user id
      * @param newStatus      new status string (e.g., "Successful", "Unsuccessful")
-     * @return true when update and CSV rewrite succeed, false if application not found or on error
+     * @return true when update and CSV rewrite succeed; false if not found or on error
      */
     public boolean updateApplicationStatus(String internshipUUID, String studentUserId, String newStatus) {
         if (internshipUUID == null || studentUserId == null || newStatus == null) {
@@ -375,7 +380,6 @@ public class CompanyRepresentativeController extends BaseController {
      * and removes those internships from the system permanently.
      * </p>
      *
-     * @param companyRep the CompanyRepresentative to check notifications for
      * @return list of notification messages (may be empty)
      */
     public List<String> checkNotifications(CompanyRepresentative companyRep) {

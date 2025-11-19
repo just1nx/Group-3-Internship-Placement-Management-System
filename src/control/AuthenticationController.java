@@ -91,8 +91,12 @@ public class AuthenticationController extends BaseController {
     /**
      * Attempt to authenticate a user by id/email and password.
      * <p>
-     * For company representatives, only accounts with "Approved" status are allowed to log in.
-     * Password verification uses PBKDF2 hashing. Error messages are printed to stderr on failure.
+     * Role resolution is attempted in this order: Student ID → Company Representative email → Staff ID.
+     * Role is determined by membership in the corresponding in-memory maps; email format is not used here.
+     * Company representatives must have status "Approved" to log in; students and staff have no status gate.
+     * Passwords are verified against PBKDF2 (HMAC-SHA256) hashes using constant-time comparison.
+     * On failure, a brief message is written to stderr ("Invalid password.", "Account not approved by staff yet.", or "Invalid user ID.").
+     * This method performs no rate limiting or account lockout.
      * </p>
      *
      * @param userID   the login identifier (student id, staff id, or company rep email)
@@ -199,7 +203,7 @@ public class AuthenticationController extends BaseController {
      * <p>
      * Generates a random 16-byte salt and applies 65,536 iterations to produce
      * a 256-bit hash. The result is formatted as "iterations:salt:hash" with
-     * salt and hash Base64-encoded.
+     * salt and hash Base64-encoded. Each invocation uses a fresh salt.
      * </p>
      *
      * @param password the plain-text password to hash
