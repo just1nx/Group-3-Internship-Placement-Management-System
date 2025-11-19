@@ -33,8 +33,19 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
      */
     private final CompanyRepresentative companyRep;
 
+    /**
+     * Filters applied when viewing internships: status values.
+     */
     private final List<String> statusFilters = new ArrayList<>();
+
+    /**
+     * Filters applied when viewing internships: level values.
+     */
     private final List<String> levelFilters = new ArrayList<>();
+
+    /**
+     * Filters applied when viewing internships: preferred major values.
+     */
     private final List<String> majorFilters = new ArrayList<>();
 
     /**
@@ -48,6 +59,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Displays the representative menu, notification banner (if any) and processes user actions until logout.
+     * <p>
+     * Shows notifications about rejected internships at startup. Notifications require acknowledgment
+     * before proceeding to the main menu.
+     * </p>
      */
     @Override
     public void display() {
@@ -371,6 +386,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Guides the creation of a new internship opportunity.
+     * <p>
+     * Checks if the company has reached the maximum internship limit (5) before proceeding.
+     * Collects all required details interactively and creates a pending internship.
+     * </p>
      */
     private void handleCreateInternship() {
         System.out.println("\n--- Create New Internship Opportunity ---");
@@ -424,6 +443,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Guides editing an existing internship. Only pending internships may be edited.
+     * <p>
+     * Displays internships matching current filters and allows the user to select one.
+     * Only fields with non-empty input are updated; empty input keeps current values.
+     * </p>
      */
     private void handleEditInternship() {
         System.out.println("\n--- Edit Internship Details ---");
@@ -505,6 +528,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Deletes a selected internship after confirmation.
+     * <p>
+     * Only pending internships can be deleted. Displays filtered internships and prompts
+     * for selection before deletion.
+     * </p>
      */
     private void handleDeleteInternship() {
         System.out.println("\n--- Delete Internship Opportunity ---");
@@ -555,6 +582,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Shows applications grouped by internship for the representative's company.
+     * <p>
+     * Displays all company internships matching current filters along with their applications.
+     * Shows application details including student name, major, year, submission date and status.
+     * </p>
      */
     private void handleViewApplications() {
         System.out.println("\n--- View Applications by Internship ---");
@@ -614,6 +645,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Allows the representative to manage (approve/reject) individual applications.
+     * <p>
+     * First prompts to select an internship, then displays its applications and allows
+     * updating individual application statuses to "Successful" or "Unsuccessful".
+     * </p>
      */
     private void handleManageApplications() {
         System.out.println("\n--- Manage Applications by Internship ---");
@@ -694,6 +729,10 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
 
     /**
      * Toggles the visibility of an approved internship posting.
+     * <p>
+     * Only approved internships can have visibility toggled. Prompts for internship
+     * selection and visibility preference (on/off).
+     * </p>
      */
     private void handleToggleVisibility() {
         System.out.println("\n--- Toggle Internship Visibility ---");
