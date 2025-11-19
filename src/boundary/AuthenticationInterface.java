@@ -95,6 +95,11 @@ public class AuthenticationInterface implements CommandLineInterface {
         System.out.print("Enter Email (this will be your User ID): ");
         String email = scanner.nextLine();
 
+        if (!authController.isValidEmail(email)) {
+            System.err.println("Registration failed: Invalid email format.");
+            return;
+        }
+
         System.out.print("Enter Your Name: ");
         String name = scanner.nextLine();
 

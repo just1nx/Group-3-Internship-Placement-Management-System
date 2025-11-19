@@ -166,6 +166,12 @@ public class CompanyRepresentativeController extends BaseController {
             return false;
         }
 
+        // Check if opening date is after closing date
+        if (opening.isAfter(closing)) {
+            System.err.println("Error: The application opening date cannot be after the closing date.");
+            return false;
+        }
+
         // Create new Internship object
         Internship newInternship = new Internship(uuid, title, description, level, preferredMajor,
                 opening, closing, status, companyName, representativeId, numberOfSlots, visibility);

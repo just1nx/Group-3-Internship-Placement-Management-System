@@ -100,21 +100,44 @@ public class AuthenticationController extends BaseController {
      * @return the authenticated User instance on success, or null on failure
      */
     public User login(String userID, String password) {
-        if ((isValidStudentId(userID) && verifyPassword(password, students.get(userID).getPasswordHash()))) {
-            return students.get(userID);
-        } else if (isValidCompanyRepEmail(userID) && verifyPassword(password, companyReps.get(userID).getPasswordHash())) {
-            if (Objects.equals(companyReps.get(userID).getStatus(), "Approved")) {
-                return companyReps.get(userID);
+        // Check Student
+        if (isValidStudentId(userID)) {
+            if (verifyPassword(password, students.get(userID).getPasswordHash())) {
+                return students.get(userID);
             } else {
-                System.err.println("Account not approved by staff yet.");
+                System.err.println("Invalid password.");
                 return null;
             }
-        } else if (isValidStaffId(userID) && verifyPassword(password, staffs.get(userID).getPasswordHash())) {
-            return staffs.get(userID);
-        } else {
-            System.err.println("Invalid credentials.");
-            return null;
         }
+
+        // Check Company Representative
+        if (isValidCompanyRepEmail(userID)) {
+            if (verifyPassword(password, companyReps.get(userID).getPasswordHash())) {
+                if (Objects.equals(companyReps.get(userID).getStatus(), "Approved")) {
+                    return companyReps.get(userID);
+                } else {
+                    System.err.println("Account not approved by staff yet.");
+                    return null;
+                }
+            } else {
+                System.err.println("Invalid password.");
+                return null;
+            }
+        }
+
+        // Check Career Center Staff
+        if (isValidStaffId(userID)) {
+            if (verifyPassword(password, staffs.get(userID).getPasswordHash())) {
+                return staffs.get(userID);
+            } else {
+                System.err.println("Invalid password.");
+                return null;
+            }
+        }
+
+        // Default: User ID not found
+        System.err.println("Invalid user ID.");
+        return null;
     }
 
     /**
