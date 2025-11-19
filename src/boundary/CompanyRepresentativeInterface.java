@@ -147,7 +147,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             if (current == null) {
                 System.out.print("Enter Internship Level (1: Basic, 2: Intermediate, 3: Advanced, 0: Cancel): ");
             } else {
-                System.out.print("Level (1: Basic, 2: Intermediate, 3: Advanced) (current: " + current + " ): ");
+                System.out.print("Level (1: Basic, 2: Intermediate, 3: Advanced) (current: " + current + "): ");
             }
             String levelChoice = scanner.nextLine();
             if (levelChoice.isEmpty() && current != null)
@@ -214,7 +214,7 @@ public class CompanyRepresentativeInterface implements CommandLineInterface {
             if (current == null) {
                 System.out.print("Enter Number of Slots (1-10, or 0 to Cancel): ");
             } else {
-                System.out.print("Number of Slots (1-10) (current: " + current + " ): ");
+                System.out.print("Number of Slots (1-10) (current: " + current + "): ");
             }
             String slotInput = scanner.nextLine();
 
