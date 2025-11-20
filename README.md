@@ -33,6 +33,9 @@ These are derived from the CSV records (applications, withdrawals, statuses) and
 ## Password Hashing
 Passwords are never stored in plaintext. Each user record stores a non‑reversible, salted, and work‑factored hash. On login, the input password is processed the same way and compared using constant‑time checks. Hashed credentials are kept in the user CSV files under `data/`.
 
+### Default Password
+Sample accounts provided in the CSV files use the default password: `password`. The CSV stores only the hashed form of this password.
+
 ## How to Run
 
 Prerequisites:
