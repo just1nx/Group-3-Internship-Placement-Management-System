@@ -158,7 +158,7 @@ public class AuthenticationController extends BaseController {
      * @return true when the CSV rewrite succeeded; false otherwise
      */
     public Boolean register(String email, String name, String password, String companyName, String department, String position) {
-        CompanyRepresentative companyRep = new CompanyRepresentative(email, name, hashPassword(password), companyName, department, position, email, "Pending");
+        CompanyRepresentative companyRep = new CompanyRepresentative(email, name, hashPassword(password), email, companyName, department, position, "Pending");
         companyReps.put(email, companyRep);
         return rewriteCompanyRepCSV(companyRepPath, companyReps);
     }
