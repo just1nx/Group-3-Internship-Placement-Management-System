@@ -52,3 +52,12 @@ Using terminal (macOS/Linux):
 mkdir -p out
 find src -name "*.java" -print0 | xargs -0 javac -d out
 java -cp out app.InternshipManagementSystem
+
+Group-3-Internship-Placement-Management-System/
+├─ src/
+│  ├─ app/
+│  ├─ boundary/
+│  ├─ control/
+│  └─ entity/
+├─ data/
+└─ Javadoc/
